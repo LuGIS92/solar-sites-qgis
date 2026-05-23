@@ -5,10 +5,25 @@ from __future__ import annotations
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
-    QCheckBox, QComboBox, QDockWidget, QDoubleSpinBox, QFileDialog,
-    QFrame, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QMessageBox,
-    QPlainTextEdit, QPushButton, QRadioButton, QScrollArea, QSpinBox,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QCheckBox,
+    QComboBox,
+    QDockWidget,
+    QDoubleSpinBox,
+    QFileDialog,
+    QFrame,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QRadioButton,
+    QScrollArea,
+    QSpinBox,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 # ── Tooltips ──────────────────────────────────────────────────────────────────
@@ -89,7 +104,9 @@ class SolarDockWidget(QDockWidget):
         self._step_bar = self._build_step_bar()
         outer.addWidget(self._step_bar)
 
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine); sep.setFrameShadow(QFrame.Sunken)
+        sep = QFrame()
+        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShadow(QFrame.Sunken)
         outer.addWidget(sep)
 
         # Haupt-Stack (5 Seiten)
@@ -100,7 +117,9 @@ class SolarDockWidget(QDockWidget):
         scroll.setFrameShape(QFrame.NoFrame)
         outer.addWidget(scroll, 1)
 
-        sep2 = QFrame(); sep2.setFrameShape(QFrame.HLine); sep2.setFrameShadow(QFrame.Sunken)
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.HLine)
+        sep2.setFrameShadow(QFrame.Sunken)
         outer.addWidget(sep2)
 
         # Navigationsleiste
@@ -116,11 +135,11 @@ class SolarDockWidget(QDockWidget):
             self._build_page_results,
         ]:
             w = QWidget()
-            l = QVBoxLayout(w)
-            l.setContentsMargins(8, 8, 8, 8)
-            l.setSpacing(6)
-            builder(l)
-            l.addStretch()
+            vbox = QVBoxLayout(w)
+            vbox.setContentsMargins(8, 8, 8, 8)
+            vbox.setSpacing(6)
+            builder(vbox)
+            vbox.addStretch()
             self._pages.addWidget(w)
 
         self._update_nav()
@@ -252,7 +271,8 @@ class SolarDockWidget(QDockWidget):
         )
         self._refresh_connections()
         conn_row.addWidget(self._pg_conn)
-        ref_btn = QPushButton("↻"); ref_btn.setFixedWidth(26)
+        ref_btn = QPushButton("↻")
+        ref_btn.setFixedWidth(26)
         ref_btn.setToolTip("Liste aktualisieren")
         ref_btn.clicked.connect(self._refresh_connections)
         conn_row.addWidget(ref_btn)
@@ -260,9 +280,11 @@ class SolarDockWidget(QDockWidget):
 
         def _pg_row(label, attr, default, tip):
             r = QHBoxLayout()
-            lbl = QLabel(label); lbl.setToolTip(tip)
+            lbl = QLabel(label)
+            lbl.setToolTip(tip)
             r.addWidget(lbl)
-            le = QLineEdit(default); le.setToolTip(tip)
+            le = QLineEdit(default)
+            le.setToolTip(tip)
             setattr(self, attr, le)
             r.addWidget(le)
             pgl.addLayout(r)
@@ -280,10 +302,12 @@ class SolarDockWidget(QDockWidget):
 
         def _file_row(label, attr_path, placeholder, browse_slot):
             r = QHBoxLayout()
-            le = QLineEdit(); le.setPlaceholderText(placeholder)
+            le = QLineEdit()
+            le.setPlaceholderText(placeholder)
             setattr(self, attr_path, le)
             r.addWidget(le)
-            btn = QPushButton("…"); btn.setFixedWidth(26)
+            btn = QPushButton("…")
+            btn.setFixedWidth(26)
             btn.clicked.connect(browse_slot)
             r.addWidget(btn)
             outer_r = QVBoxLayout()
@@ -354,16 +378,22 @@ class SolarDockWidget(QDockWidget):
         ]
         for key, label, tip in defs:
             row = QHBoxLayout()
-            lbl = QLabel(f"{label}:"); lbl.setFixedWidth(110); lbl.setToolTip(tip)
+            lbl = QLabel(f"{label}:")
+            lbl.setFixedWidth(110)
+            lbl.setToolTip(tip)
             row.addWidget(lbl)
-            cb = QComboBox(); cb.setEditable(True); cb.setToolTip(tip)
+            cb = QComboBox()
+            cb.setEditable(True)
+            cb.setToolTip(tip)
             cb.addItem("-- automatisch --")
             row.addWidget(cb)
             layout.addLayout(row)
             self._map_inputs[key] = cb
 
         # MaStR-spezifische Spalten
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine); sep.setFrameShadow(QFrame.Sunken)
+        sep = QFrame()
+        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShadow(QFrame.Sunken)
         layout.addWidget(sep)
         layout.addWidget(QLabel("<b>MaStR-Tabelle / -Layer</b> (optional)"))
 
@@ -373,9 +403,13 @@ class SolarDockWidget(QDockWidget):
         ]
         for key, label, tip in mastr_defs:
             row = QHBoxLayout()
-            lbl = QLabel(f"{label}:"); lbl.setFixedWidth(130); lbl.setToolTip(tip)
+            lbl = QLabel(f"{label}:")
+            lbl.setFixedWidth(130)
+            lbl.setToolTip(tip)
             row.addWidget(lbl)
-            cb = QComboBox(); cb.setEditable(True); cb.setToolTip(tip)
+            cb = QComboBox()
+            cb.setEditable(True)
+            cb.setToolTip(tip)
             cb.addItem("-- automatisch --")
             row.addWidget(cb)
             layout.addLayout(row)
@@ -402,14 +436,16 @@ class SolarDockWidget(QDockWidget):
 
         # Stadt
         city_w = QWidget()
-        city_l = QVBoxLayout(city_w); city_l.setContentsMargins(0, 4, 0, 0)
+        city_l = QVBoxLayout(city_w)
+        city_l.setContentsMargins(0, 4, 0, 0)
         for label, attr, ph in [
             ("Stadt / Adresse:", "_city", "z.B. Köln, München Schwabing"),
             ("PLZ (optional):", "_plz",  "z.B. 50667"),
         ]:
             r = QHBoxLayout()
             r.addWidget(QLabel(label))
-            le = QLineEdit(); le.setPlaceholderText(ph)
+            le = QLineEdit()
+            le.setPlaceholderText(ph)
             setattr(self, attr, le)
             r.addWidget(le)
             city_l.addLayout(r)
@@ -420,7 +456,8 @@ class SolarDockWidget(QDockWidget):
 
         # BBox
         bbox_w = QWidget()
-        bbox_l = QVBoxLayout(bbox_w); bbox_l.setContentsMargins(0, 4, 0, 0)
+        bbox_l = QVBoxLayout(bbox_w)
+        bbox_l.setContentsMargins(0, 4, 0, 0)
         for label, attr, default, lo, hi in [
             ("Min Lat:", "_min_lat", 50.0, -90,  90),
             ("Min Lon:", "_min_lon",  7.0,-180, 180),
@@ -429,7 +466,10 @@ class SolarDockWidget(QDockWidget):
         ]:
             r = QHBoxLayout()
             r.addWidget(QLabel(label))
-            sb = QDoubleSpinBox(); sb.setRange(lo, hi); sb.setDecimals(5); sb.setValue(default)
+            sb = QDoubleSpinBox()
+            sb.setRange(lo, hi)
+            sb.setDecimals(5)
+            sb.setValue(default)
             setattr(self, attr, sb)
             r.addWidget(sb)
             bbox_l.addLayout(r)
@@ -441,7 +481,9 @@ class SolarDockWidget(QDockWidget):
         )
 
         # ── Schnellauswahl ────────────────────────────────────────────────────
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine); sep.setFrameShadow(QFrame.Sunken)
+        sep = QFrame()
+        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShadow(QFrame.Sunken)
         layout.addWidget(sep)
         layout.addWidget(QLabel("Schnellauswahl:"))
 
@@ -457,7 +499,8 @@ class SolarDockWidget(QDockWidget):
         self._layer_combo = QComboBox()
         self._layer_combo.setToolTip("Geladenen Layer als Extent-Quelle wählen")
         layer_row.addWidget(self._layer_combo)
-        ref_lyr = QPushButton("↻"); ref_lyr.setFixedWidth(26)
+        ref_lyr = QPushButton("↻")
+        ref_lyr.setFixedWidth(26)
         ref_lyr.setToolTip("Layer-Liste aktualisieren")
         ref_lyr.clicked.connect(self._refresh_layers)
         layer_row.addWidget(ref_lyr)
@@ -477,9 +520,13 @@ class SolarDockWidget(QDockWidget):
             ("Max. Gebäude:",         "_limit",      0,   5000, 100,  50,  _TIP_LIMIT),
         ]:
             r = QHBoxLayout()
-            lbl = QLabel(label); lbl.setToolTip(tip)
+            lbl = QLabel(label)
+            lbl.setToolTip(tip)
             r.addWidget(lbl)
-            sb = QSpinBox(); sb.setRange(lo, hi); sb.setValue(val); sb.setSingleStep(step)
+            sb = QSpinBox()
+            sb.setRange(lo, hi)
+            sb.setValue(val)
+            sb.setSingleStep(step)
             sb.setToolTip(tip)
             if attr == "_limit":
                 sb.setSpecialValueText("unbegrenzt")
@@ -553,7 +600,8 @@ class SolarDockWidget(QDockWidget):
         self._log.setReadOnly(True)
         self._log.setMaximumBlockCount(1000)
         self._log.setMinimumHeight(220)
-        mono = QFont("Courier"); mono.setPointSize(9)
+        mono = QFont("Courier")
+        mono.setPointSize(9)
         self._log.setFont(mono)
         layout.addWidget(self._log)
 
@@ -657,8 +705,8 @@ class SolarDockWidget(QDockWidget):
 
     def _fetch_source_columns(self) -> list[str]:
         if self._ds_postgis.isChecked():
-            from .qgis_db_utils import get_dsn
             from .data_sources import PostGISSource
+            from .qgis_db_utils import get_dsn
             dsn = get_dsn(self._pg_conn.currentText())
             return PostGISSource.load_columns(dsn, self._pg_table.text().strip())
         else:
@@ -678,8 +726,8 @@ class SolarDockWidget(QDockWidget):
     def _build_source(self):
         col_map = self._get_column_map()
         if self._ds_postgis.isChecked():
-            from .qgis_db_utils import get_dsn
             from .data_sources import PostGISSource
+            from .qgis_db_utils import get_dsn
             conn_name = self._pg_conn.currentText()
             if not conn_name:
                 raise ValueError("Keine PostgreSQL-Verbindung ausgewählt.")
@@ -710,7 +758,7 @@ class SolarDockWidget(QDockWidget):
     def _bbox_from_canvas(self) -> None:
         """Aktuelle QGIS-Kartenansicht → BBox-Felder (WGS84)."""
         try:
-            from qgis.core import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject
+            from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject
             canvas = self.iface.mapCanvas()
             extent = canvas.extent()
             crs_4326 = QgsCoordinateReferenceSystem("EPSG:4326")
@@ -732,7 +780,7 @@ class SolarDockWidget(QDockWidget):
             layer = self._layer_combo.currentData()
             if layer is None:
                 return
-            from qgis.core import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsProject
+            from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject
             crs_4326 = QgsCoordinateReferenceSystem("EPSG:4326")
             xform = QgsCoordinateTransform(layer.crs(), crs_4326, QgsProject.instance())
             ext_wgs = xform.transformBoundingBox(layer.extent())
@@ -859,7 +907,7 @@ class SolarDockWidget(QDockWidget):
         self._excel_btn.setEnabled(True)
         self._gpkg_btn.setEnabled(True)
 
-        from .layer_builder import build_memory_layer, add_to_project
+        from .layer_builder import add_to_project, build_memory_layer
         self._result_layer = build_memory_layer(analyses, self._job_id)
         add_to_project(self._result_layer, self.iface)
 
@@ -881,8 +929,9 @@ class SolarDockWidget(QDockWidget):
         if not path:
             return
         try:
-            from solar_sites.export.excel import export_to_excel
             from pathlib import Path
+
+            from solar_sites.export.excel import export_to_excel
             out = export_to_excel(self._analyses, self._job_id, Path(path))
             QMessageBox.information(self, "Export", f"Gespeichert:\n{out}")
         except Exception as e:

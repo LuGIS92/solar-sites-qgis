@@ -21,7 +21,7 @@ def get_dsn(conn_name: str) -> str:
       2. In QgsSettings gespeichertes Klartextpasswort (savePassword=true)
       3. Interaktiver QGIS-Passwort-Dialog als Fallback
     """
-    from qgis.core import QgsSettings, QgsApplication, QgsCredentials
+    from qgis.core import QgsApplication, QgsCredentials, QgsSettings
 
     s = QgsSettings()
     base = f"PostgreSQL/connections/{conn_name}"

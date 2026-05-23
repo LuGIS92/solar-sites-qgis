@@ -175,7 +175,7 @@ def run_by_bbox(
     if not skip_mastr:
         print(f"  MaStR: {mastr_hits} mit PV-Anlage registriert", file=out)
     else:
-        print(f"  MaStR: übersprungen (--no-mastr)", file=out)
+        print("  MaStR: übersprungen (--no-mastr)", file=out)
     if model_available():
         print(f"  YOLO: {panel_hits} Gebäude mit Panels erkannt", file=out)
     return job_id

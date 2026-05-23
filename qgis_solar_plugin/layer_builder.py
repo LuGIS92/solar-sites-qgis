@@ -5,11 +5,17 @@ from __future__ import annotations
 
 def build_memory_layer(analyses: list[dict], job_id: str):
     """Erstellt einen QGIS-Memory-Layer (Punkte) mit allen Analysewerten."""
-    from qgis.core import (
-        QgsVectorLayer, QgsField, QgsFeature, QgsGeometry, QgsPointXY,
-        QgsGraduatedSymbolRenderer, QgsRendererRange, QgsMarkerSymbol,
-    )
     from PyQt5.QtCore import QVariant
+    from qgis.core import (
+        QgsFeature,
+        QgsField,
+        QgsGeometry,
+        QgsGraduatedSymbolRenderer,
+        QgsMarkerSymbol,
+        QgsPointXY,
+        QgsRendererRange,
+        QgsVectorLayer,
+    )
 
     layer = QgsVectorLayer("Point?crs=EPSG:4326", f"Solar {job_id}", "memory")
     pr = layer.dataProvider()
@@ -68,7 +74,7 @@ def _f(d: dict, key: str) -> float | None:
 
 def _apply_symbology(layer) -> None:
     """Gestaffelte Farbcodierung nach annual_energy_kwh (rot → gelb → grün)."""
-    from qgis.core import QgsGraduatedSymbolRenderer, QgsRendererRange, QgsMarkerSymbol
+    from qgis.core import QgsGraduatedSymbolRenderer, QgsMarkerSymbol, QgsRendererRange
 
     ranges_def = [
         (0,       50_000,    "#e74c3c", "< 50 MWh/Jahr"),
@@ -88,7 +94,8 @@ def _apply_symbology(layer) -> None:
 def add_to_project(layer, iface) -> None:
     """Layer zum QGIS-Projekt hinzufügen und Kartenausschnitt anpassen."""
     from qgis.core import (
-        QgsProject, QgsCoordinateTransform,
+        QgsCoordinateTransform,
+        QgsProject,
     )
     QgsProject.instance().addMapLayer(layer)
     if not layer.extent().isEmpty():
@@ -105,7 +112,7 @@ def add_to_project(layer, iface) -> None:
 
 def save_to_gpkg(layer, path: str) -> str:
     """Speichert den Layer als GeoPackage. Gibt den Dateipfad zurück."""
-    from qgis.core import QgsVectorFileWriter, QgsCoordinateTransformContext
+    from qgis.core import QgsCoordinateTransformContext, QgsVectorFileWriter
 
     options = QgsVectorFileWriter.SaveVectorOptions()
     options.driverName = "GPKG"

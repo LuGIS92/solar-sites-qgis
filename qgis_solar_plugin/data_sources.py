@@ -242,9 +242,13 @@ class GeoPackageSource:
         limit: int | None = None,
     ) -> list[Building]:
         from qgis.core import (
-            QgsVectorLayer, QgsFeatureRequest, QgsRectangle,
-            QgsCoordinateReferenceSystem, QgsCoordinateTransform,
-            QgsProject, QgsDistanceArea,
+            QgsCoordinateReferenceSystem,
+            QgsCoordinateTransform,
+            QgsDistanceArea,
+            QgsFeatureRequest,
+            QgsProject,
+            QgsRectangle,
+            QgsVectorLayer,
         )
 
         uri = f"{self.gpkg_path}|layername={self.layer_name}"
@@ -329,9 +333,13 @@ class GeoPackageSource:
             return False, None
 
         from qgis.core import (
-            QgsRectangle, QgsFeatureRequest, QgsDistanceArea,
-            QgsCoordinateReferenceSystem, QgsCoordinateTransform,
-            QgsPointXY, QgsProject,
+            QgsCoordinateReferenceSystem,
+            QgsCoordinateTransform,
+            QgsDistanceArea,
+            QgsFeatureRequest,
+            QgsPointXY,
+            QgsProject,
+            QgsRectangle,
         )
 
         layer    = self._mastr_layer_obj

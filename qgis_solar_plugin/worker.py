@@ -57,9 +57,9 @@ class AnalysisWorker(QThread):
         print(f"{len(buildings)} Gebäude gefunden.", file=log)
 
         # 2. Hilfsmodule laden + Voraussetzungen prüfen
-        from solar_sites.solar.estimator import estimate as _estimate
         from solar_sites.solar.detection import detect_for_building, model_available
         from solar_sites.solar.dlr import get_dlr_potential
+        from solar_sites.solar.estimator import estimate as _estimate
         try:
             from solar_sites.solar.dlr import clear_cache as _dlr_clear
             _dlr_clear()
@@ -86,9 +86,11 @@ class AnalysisWorker(QThread):
         # DLR-Verfügbarkeit am ersten Gebäude testen
         b0 = buildings[0]
         try:
-            from solar_sites.solar.dlr import _coord_to_tile_pixel
+            import requests as _req
+            import urllib3
+
             from solar_sites.config import settings as _cfg
-            import requests as _req, urllib3
+            from solar_sites.solar.dlr import _coord_to_tile_pixel
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
             _col, _row, _px, _py = _coord_to_tile_pixel(b0.lat, b0.lon, _cfg.dlr_zoom)
             _params = {
