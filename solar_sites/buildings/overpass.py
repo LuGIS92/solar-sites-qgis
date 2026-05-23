@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import math
-
-import requests
+import urllib.error
+import urllib.parse
+import urllib.request
 
 _OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 _DEFAULT_TIMEOUT = 60
@@ -38,13 +40,13 @@ def fetch_buildings(
         f");\n"
         f"out geom;\n"
     )
-    headers = {
-        "User-Agent": "solar-sites-qgis/1.0 (QGIS Plugin; OpenStreetMap Overpass)",
-        "Accept": "application/json",
-    }
-    resp = requests.get(overpass_url, params={"data": query}, headers=headers, timeout=timeout + 10)
-    resp.raise_for_status()
-    data = resp.json()
+    url = overpass_url + "?" + urllib.parse.urlencode({"data": query})
+    req = urllib.request.Request(url, headers={"User-Agent": "solar-sites-qgis/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout + 10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"Overpass-API Fehler {exc.code} {exc.reason}") from exc
 
     results = []
     for element in data.get("elements", []):
