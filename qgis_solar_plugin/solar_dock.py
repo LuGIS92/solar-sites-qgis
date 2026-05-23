@@ -250,9 +250,11 @@ class SolarDockWidget(QDockWidget):
         mode_row = QHBoxLayout()
         self._ds_postgis = QRadioButton("QGIS PostgreSQL-Verbindung")
         self._ds_gpkg    = QRadioButton("GeoPackage-Datei (.gpkg)")
+        self._ds_osm     = QRadioButton("OpenStreetMap (Overpass)")
         self._ds_postgis.setChecked(True)
         mode_row.addWidget(self._ds_postgis)
         mode_row.addWidget(self._ds_gpkg)
+        mode_row.addWidget(self._ds_osm)
         layout.addLayout(mode_row)
 
         self._ds_stack = QStackedWidget()
@@ -350,11 +352,57 @@ class SolarDockWidget(QDockWidget):
         gpl.addWidget(note)
 
         self._ds_stack.addWidget(gp)
+
+        # ── OpenStreetMap / Overpass ──────────────────────────────────────────
+        osm = QWidget()
+        osml = QVBoxLayout(osm)
+        osml.setContentsMargins(0, 4, 0, 0)
+
+        osm_info = QLabel(
+            "Gebäude werden live aus OpenStreetMap via Overpass-API geladen.\n"
+            "Keine lokalen Daten erforderlich – funktioniert weltweit.\n\n"
+            "⚠ Für große Gebiete (> 5 km²) kann die Abfrage mehrere Minuten\n"
+            "  dauern. Bitte Gebäude-Limit auf Seite 4 setzen."
+        )
+        osm_info.setWordWrap(True)
+        osm_info.setStyleSheet("color:#555; font-size:10px;")
+        osml.addWidget(osm_info)
+
+        url_row = QHBoxLayout()
+        url_row.addWidget(QLabel("Overpass-URL:"))
+        self._osm_url = QLineEdit("https://overpass-api.de/api/interpreter")
+        self._osm_url.setToolTip(
+            "Overpass-API-Endpunkt.\n"
+            "Alternative Instanzen: overpass.kumi.systems, z.overpass.de"
+        )
+        url_row.addWidget(self._osm_url)
+        osml.addLayout(url_row)
+
+        timeout_row = QHBoxLayout()
+        timeout_row.addWidget(QLabel("Timeout (s):"))
+        self._osm_timeout = QSpinBox()
+        self._osm_timeout.setRange(10, 300)
+        self._osm_timeout.setValue(60)
+        self._osm_timeout.setToolTip("Maximale Wartezeit für die Overpass-Abfrage.")
+        timeout_row.addWidget(self._osm_timeout)
+        timeout_row.addStretch()
+        osml.addLayout(timeout_row)
+
+        self._ds_stack.addWidget(osm)
+
         layout.addWidget(self._ds_stack)
 
-        self._ds_postgis.toggled.connect(
-            lambda on: self._ds_stack.setCurrentIndex(0 if on else 1)
-        )
+        def _update_stack() -> None:
+            if self._ds_postgis.isChecked():
+                self._ds_stack.setCurrentIndex(0)
+            elif self._ds_gpkg.isChecked():
+                self._ds_stack.setCurrentIndex(1)
+            else:
+                self._ds_stack.setCurrentIndex(2)
+
+        self._ds_postgis.toggled.connect(lambda _: _update_stack())
+        self._ds_gpkg.toggled.connect(lambda _: _update_stack())
+        self._ds_osm.toggled.connect(lambda _: _update_stack())
 
     def _build_page_columns(self, layout: QVBoxLayout) -> None:
         """Seite 1 – Spalten-Zuordnung."""
@@ -629,11 +677,16 @@ class SolarDockWidget(QDockWidget):
             return
         if self._current_page == self._LAST_SETUP_PAGE:
             self._start_analysis()
+        elif self._current_page == 0 and self._ds_osm.isChecked():
+            self._go_to(2)  # Spalten-Zuordnung für OSM irrelevant
         else:
             self._go_to(self._current_page + 1)
 
     def _prev_page(self) -> None:
-        self._go_to(self._current_page - 1)
+        if self._current_page == 2 and self._ds_osm.isChecked():
+            self._go_to(0)  # Spalten-Seite rückwärts überspringen
+        else:
+            self._go_to(self._current_page - 1)
 
     def _go_to(self, page: int) -> None:
         self._current_page = page
@@ -661,6 +714,9 @@ class SolarDockWidget(QDockWidget):
                 return False
             if self._ds_gpkg.isChecked() and not self._gpkg_path.text().strip():
                 QMessageBox.warning(self, "Eingabe", "Kein GeoPackage-Pfad angegeben.")
+                return False
+            if self._ds_osm.isChecked() and not self._osm_url.text().strip():
+                QMessageBox.warning(self, "Eingabe", "Bitte Overpass-URL angeben.")
                 return False
         if page == 2 and self._srch_city.isChecked():
             if not self._city.text().strip():
@@ -709,12 +765,13 @@ class SolarDockWidget(QDockWidget):
             from .qgis_db_utils import get_dsn
             dsn = get_dsn(self._pg_conn.currentText())
             return PostGISSource.load_columns(dsn, self._pg_table.text().strip())
-        else:
-            from .data_sources import GeoPackageSource
-            return GeoPackageSource.load_columns(
-                self._gpkg_path.text().strip(),
-                self._gpkg_layer.text().strip() or "buildings",
-            )
+        if self._ds_osm.isChecked():
+            return []  # OSM-Tags sind fest; Spalten-Mapping nicht anwendbar
+        from .data_sources import GeoPackageSource
+        return GeoPackageSource.load_columns(
+            self._gpkg_path.text().strip(),
+            self._gpkg_layer.text().strip() or "buildings",
+        )
 
     def _get_column_map(self) -> dict:
         return {
@@ -734,18 +791,23 @@ class SolarDockWidget(QDockWidget):
             dsn   = get_dsn(conn_name)
             mastr = self._pg_mastr.text().strip() or None
             return PostGISSource(dsn, self._pg_table.text().strip(), mastr, column_map=col_map)
-        else:
-            from .data_sources import GeoPackageSource
-            path = self._gpkg_path.text().strip()
-            if not path:
-                raise ValueError("Kein GeoPackage-Pfad angegeben.")
-            mastr_path = self._gpkg_mastr_path.text().strip() or None
-            mastr_lyr  = self._gpkg_mastr_layer.text().strip() or "mastr_solar"
-            return GeoPackageSource(
-                path, self._gpkg_layer.text().strip() or "buildings",
-                mastr_gpkg_path=mastr_path, mastr_layer=mastr_lyr,
-                column_map=col_map,
+        if self._ds_osm.isChecked():
+            from .data_sources import OverpassSource
+            return OverpassSource(
+                overpass_url=self._osm_url.text().strip(),
+                timeout=self._osm_timeout.value(),
             )
+        from .data_sources import GeoPackageSource
+        path = self._gpkg_path.text().strip()
+        if not path:
+            raise ValueError("Kein GeoPackage-Pfad angegeben.")
+        mastr_path = self._gpkg_mastr_path.text().strip() or None
+        mastr_lyr  = self._gpkg_mastr_layer.text().strip() or "mastr_solar"
+        return GeoPackageSource(
+            path, self._gpkg_layer.text().strip() or "buildings",
+            mastr_gpkg_path=mastr_path, mastr_layer=mastr_lyr,
+            column_map=col_map,
+        )
 
     def _get_bbox(self) -> dict | None:
         if self._srch_city.isChecked():

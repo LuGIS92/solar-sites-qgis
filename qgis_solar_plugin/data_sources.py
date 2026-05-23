@@ -383,3 +383,85 @@ class GeoPackageSource:
         from qgis.core import QgsVectorLayer
         layer = QgsVectorLayer(f"{gpkg_path}|layername={layer_name}", "_tmp", "ogr")
         return [f.name() for f in layer.fields()] if layer.isValid() else []
+
+
+# ── Overpass-Quelle (OpenStreetMap) ──────────────────────────────────────────
+
+#: OSM-Gebäudetypen → interne building_use-Kategorien
+_OSM_WOHNEN  = frozenset({"house", "detached", "semi", "terrace", "apartments", "residential", "bungalow"})
+_OSM_GEWERBE = frozenset({"industrial", "warehouse", "commercial", "retail", "office", "factory"})
+
+
+class OverpassSource:
+    """Lädt Gebäude live aus der Overpass-API (OpenStreetMap).
+
+    Keine persistente Verbindung, keine externe Abhängigkeit außer requests.
+    MaStR-Abfrage ist nicht verfügbar (liefert immer False, None).
+
+    Gebäudetyp-Filter orientiert sich an OSM-Tags statt ALKIS-Codes:
+        wohnen   → building ∈ {house, apartments, detached, …}
+        gewerbe  → building ∈ {industrial, warehouse, commercial, …}
+        Eigener Filter → freier Textvergleich auf dem "building"-Tag
+    """
+
+    def __init__(
+        self,
+        overpass_url: str = "https://overpass-api.de/api/interpreter",
+        timeout: int = 60,
+    ) -> None:
+        self.overpass_url = overpass_url
+        self.timeout = timeout
+
+    def connect(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+    def find_buildings(
+        self,
+        min_lat: float, min_lon: float, max_lat: float, max_lon: float,
+        min_area: float = 100.0,
+        building_use: str | None = None,
+        building_type_filter: str | None = None,
+        limit: int | None = None,
+    ) -> list[Building]:
+        from solar_sites.buildings.overpass import fetch_buildings
+        raw = fetch_buildings(
+            min_lat, min_lon, max_lat, max_lon,
+            timeout=self.timeout,
+            overpass_url=self.overpass_url,
+        )
+
+        buildings = []
+        for r in raw:
+            if r["area_sqm"] < min_area:
+                continue
+            bt = str(r.get("building_type") or "").strip()
+            if building_type_filter:
+                if building_type_filter.lower() not in bt.lower():
+                    continue
+            elif building_use == "wohnen":
+                if bt not in _OSM_WOHNEN:
+                    continue
+            elif building_use == "gewerbe":
+                if bt not in _OSM_GEWERBE:
+                    continue
+            buildings.append(Building(
+                id=r["id"],
+                geom_wkt=r["geom_wkt"],
+                area_sqm=r["area_sqm"],
+                roof_type=r.get("roof_type"),
+                building_type=bt or None,
+                source="osm",
+                lat=r["lat"],
+                lon=r["lon"],
+            ))
+
+        buildings.sort(key=lambda b: b.area_sqm, reverse=True)
+        if limit:
+            buildings = buildings[:limit]
+        return buildings
+
+    def check_mastr(self, lat: float, lon: float, radius_m: float = 100) -> tuple[bool, float | None]:
+        return False, None

@@ -23,7 +23,7 @@ class AnalysisWorker(QThread):
 
     def __init__(self, source, params: dict) -> None:
         super().__init__()
-        self.source = source   # PostGISSource oder GeoPackageSource
+        self.source = source   # PostGISSource, GeoPackageSource oder OverpassSource
         self.params = params
 
     def run(self) -> None:
