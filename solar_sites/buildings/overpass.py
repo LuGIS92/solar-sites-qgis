@@ -38,7 +38,11 @@ def fetch_buildings(
         f");\n"
         f"out geom;\n"
     )
-    resp = requests.post(overpass_url, data={"data": query}, timeout=timeout + 10)
+    headers = {
+        "User-Agent": "solar-sites-qgis/1.0 (QGIS Plugin; OpenStreetMap Overpass)",
+        "Accept": "application/json",
+    }
+    resp = requests.get(overpass_url, params={"data": query}, headers=headers, timeout=timeout + 10)
     resp.raise_for_status()
     data = resp.json()
 
