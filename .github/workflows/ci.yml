@@ -1,6 +1,5 @@
 name: CI
 
-# Runs on every push and pull request
 on:
   push:
     branches: ["main", "claude/**"]
@@ -9,29 +8,53 @@ on:
 
 jobs:
   test:
-    name: Tests & lint
+    name: Tests & Lint
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Python einrichten
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: pip-Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Abhängigkeiten installieren
         run: |
           pip install --upgrade pip
-          pip install ruff pytest pydantic-settings requests pandas openpyxl
+          pip install ruff pytest pytest-cov pydantic-settings requests pandas openpyxl
 
-      - name: Lint with ruff
+      - name: Lint (ruff)
         run: ruff check solar_sites/ qgis_solar_plugin/
 
-      - name: Syntax-check plugin files
+      - name: Syntax-Check Plugin-Dateien
         run: python -m compileall -q qgis_solar_plugin/ solar_sites/
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
-        # Tests that don't need QGIS or a live DB run fine here.
-        # PyQGIS-specific code is only exercised manually / in QGIS.
+      - name: Tests mit Coverage
+        run: |
+          pytest tests/ -v --tb=short \
+            --cov=solar_sites --cov=qgis_solar_plugin \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml
+
+      - name: Coverage-Zusammenfassung in Job-Übersicht
+        if: always()
+        run: |
+          python - <<'EOF'
+          import xml.etree.ElementTree as ET, sys
+          try:
+              tree = ET.parse("coverage.xml")
+              cov = float(tree.getroot().attrib.get("line-rate", 0)) * 100
+              print(f"### Coverage: {cov:.1f} %")
+              if cov < 50:
+                  print("⚠ Coverage unter 50 % – bitte Tests ergänzen.")
+          except Exception as e:
+              print(f"Coverage-Report konnte nicht gelesen werden: {e}")
+          EOF

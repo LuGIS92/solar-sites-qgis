@@ -1,7 +1,30 @@
 # Changelog
 
-All notable changes are documented here.
-Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+Alle wesentlichen Änderungen werden hier dokumentiert.
+Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
+
+## [2.0.0] - 2026-05-23
+
+### Neu
+- **OpenStreetMap-Datenquelle** via Overpass-API – keine lokalen Daten nötig,
+  weltweit einsetzbar (`solar_sites/buildings/overpass.py`)
+- `OverpassSource` in `data_sources.py` mit identischem Interface wie PostGIS/GeoPackage
+- OSM-Gebäudetyp-Filter (`house`, `industrial`, …) als dritte Kategorie neben ALKIS-Codes
+- Wizard-Seite 2 (Spalten-Zuordnung) wird im OSM-Modus automatisch übersprungen
+- Konfigurierbare Overpass-URL und Timeout in der UI
+- **38 pytest-Tests** (kein QGIS/DB erforderlich): Geometrie-Hilfsfunktionen,
+  HTTP-Mocking, Filterlogik, SQL-Injection-Schutz
+
+### Geändert
+- HTTP-Client für Overpass von `requests` auf `urllib` (Python-Stdlib) umgestellt –
+  robuster in QGIS-Python-Umgebung, keine externe Abhängigkeit
+- README vollständig auf Deutsch überarbeitet und auf drei Datenquellen aktualisiert
+
+### Behoben
+- Alle 52 ruff-Lint-Fehler behoben: Import-Sortierung (I001), Semikolon-Zeilen (E702),
+  ambiguous Variable `l` (E741), Multi-Import (E401), f-String ohne Platzhalter (F541)
+
+---
 
 ## [1.0.0] - 2025-05-23
 

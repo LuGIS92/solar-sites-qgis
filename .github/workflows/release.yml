@@ -1,6 +1,6 @@
 name: Release
 
-# Triggered when you push a version tag: git tag v1.0.1 && git push --tags
+# Ausgelöst wenn ein Versions-Tag gepusht wird: git tag v2.0.1 && git push --tags
 on:
   push:
     tags:
@@ -8,32 +8,46 @@ on:
 
 jobs:
   build-and-release:
-    name: Build ZIP and publish GitHub Release
+    name: ZIP bauen und GitHub Release erstellen
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # needed to create the release
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build plugin ZIP
+      - name: Plugin-ZIP bauen
         run: bash scripts/build_zip.sh
 
-      - name: Get version from tag
+      - name: Version aus Tag lesen
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
+      - name: CHANGELOG-Eintrag für diesen Tag extrahieren
+        id: changelog
+        run: |
+          python - <<'EOF'
+          import re, sys
+          tag = "${{ steps.version.outputs.VERSION }}"
+          version = tag.lstrip("v")
+          try:
+              text = open("CHANGELOG.md").read()
+              # Findet den Block zwischen dieser Version und der nächsten
+              pattern = rf"## \[{re.escape(version)}\].*?\n(.*?)(?=\n## \[|\Z)"
+              m = re.search(pattern, text, re.DOTALL)
+              body = m.group(1).strip() if m else "_Keine CHANGELOG-Einträge gefunden._"
+          except Exception as e:
+              body = f"_Fehler beim Lesen des CHANGELOG: {e}_"
+          with open("release_notes.md", "w") as f:
+              f.write(body)
+          print(body[:500])
+          EOF
+
+      - name: GitHub Release erstellen
         uses: softprops/action-gh-release@v2
         with:
           name: "Solar Sites PV Plugin ${{ steps.version.outputs.VERSION }}"
-          body: |
-            ## Installation
-            1. Download `solar_sites_pv_analysis_*.zip` below.
-            2. In QGIS: **Plugins → Manage and Install Plugins → Install from ZIP**.
-
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-            for what changed in this release.
+          body_path: release_notes.md
           files: dist/solar_sites_pv_analysis_*.zip
           draft: false
           prerelease: false

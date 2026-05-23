@@ -12,7 +12,7 @@ Eingabe: Bounding-Box (oder Stadtname) + Filterparameter
 Ausgabe: QGIS-Vektorlayer + Excel-Export + optionaler GeoPackage-Export
 
 **Datenquellen:**
-- Gebäude: ALKIS via PostGIS **oder** lokale GeoPackage-Datei
+- Gebäude: ALKIS via PostGIS **oder** lokale GeoPackage-Datei **oder** OpenStreetMap via Overpass-API
 - Solarstrahlung: PVGIS-API (EU JRC) und DLR-Gebäudeatlas (WMTS)
 - Bestandsanlagen: Marktstammdatenregister (MaStR) – PostGIS-Tabelle oder lokales GPKG
 - Optional: YOLO-Panel-Erkennung auf Satellitenbildern (leafmap)
@@ -204,18 +204,38 @@ Koordinatenfelder befüllen.
 
 ---
 
+## README-Pflege (zwingend einhalten)
+
+Das `README.md` ist auf **Deutsch** und muss nach jeder nutzer-sichtbaren Änderung
+aktualisiert werden. Konkret:
+
+- **Neue Datenquelle / Feature** → Feature-Tabelle und entsprechende Sektion ergänzen
+- **Neues Ausgabe-Feld** → Tabelle "Ausgabe-Felder" erweitern
+- **Geänderter Gebäudetyp-Filter** → Tabelle "Gebäudetyp-Filter" anpassen
+- **Neue Abhängigkeit** → Abschnitt "Python-Pakete" aktualisieren
+- **Geänderter Symlink-Pfad oder Workflow** → Entwicklungs-Abschnitt korrigieren
+
+**CHANGELOG.md** ebenfalls bei jedem Commit pflegen (auf Deutsch, Keep-a-Changelog-Format).
+Neue Features → `### Neu`, Bugfixes → `### Behoben`, breaking changes → `### Geändert`.
+
+---
+
 ## Entwicklungs-Workflow
 
 ### Plugin in QGIS testen (Dev-Mode)
 
 ```bash
-# Im QGIS Plugin-Verzeichnis (macOS)
-ln -sf /pfad/zum/repo/qgis_solar_plugin \
+# Einmalig setzen (macOS) – bleibt dauerhaft erhalten:
+ln -sfn /pfad/zum/repo/qgis_solar_plugin \
     ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/qgis_solar_plugin
 ```
 
-QGIS: **Erweiterungen → Erweiterungen verwalten → Installiert → Reload**  
-(oder Plugin Reloader installieren für schnelleres Iterieren)
+Danach genügt im Alltag:
+- Änderungen im Repo vornehmen
+- **Plugin Reloader** (F5) in QGIS drücken
+
+Hinweis: Änderungen in `solar_sites/` erfordern QGIS-Neustart (sys.modules-Cache).
+Änderungen nur in `qgis_solar_plugin/` → Plugin Reloader reicht.
 
 ### ZIP für Weitergabe bauen
 

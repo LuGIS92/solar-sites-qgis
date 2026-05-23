@@ -1,139 +1,154 @@
-# Solar Sites – QGIS PV Analysis Plugin
+# Solar Sites – QGIS PV-Analyse-Plugin
 
-A QGIS plugin for automated rooftop solar potential screening of buildings.
-Loads building footprints from **ALKIS/PostGIS** or a **GeoPackage**, queries
-irradiance data from **PVGIS** and the **DLR Solar Atlas**, cross-checks
-registrations in the **Marktstammdatenregister (MaStR)**, and produces a
-colour-coded vector layer plus an Excel report — all without leaving QGIS.
+[![CI](https://github.com/LuGIS92/solar-sites-qgis/actions/workflows/ci.yml/badge.svg)](https://github.com/LuGIS92/solar-sites-qgis/actions/workflows/ci.yml)
+[![Lizenz: GPL v3](https://img.shields.io/badge/Lizenz-GPL%20v3-blue.svg)](LICENSE)
+[![QGIS ≥ 3.16](https://img.shields.io/badge/QGIS-%E2%89%A53.16-green)](https://qgis.org)
 
-> Focused on Germany, but works with any building dataset that can be loaded
-> into QGIS.
+QGIS-Plugin zur automatisierten PV-Potenzialanalyse auf Gebäudedächern.  
+Gebäude werden aus **ALKIS/PostGIS**, einer **GeoPackage-Datei** oder direkt aus
+**OpenStreetMap** geladen. Strahlungsdaten kommen von **PVGIS** (EU JRC) und dem
+**DLR-Gebäudeatlas**, PV-Bestandsanlagen werden im **Marktstammdatenregister (MaStR)**
+geprüft – alles ohne QGIS zu verlassen.
+
+> Schwerpunkt Deutschland, funktioniert aber mit jedem Gebäudedatensatz der in QGIS
+> geladen werden kann. OSM-Modus ist weltweit einsetzbar.
 
 ---
 
-## Features
+## Funktionen
 
-| Feature | Details |
+| Funktion | Details |
 |---|---|
-| **Two data sources** | QGIS PostgreSQL connection (ALKIS/PostGIS) or any GeoPackage |
-| **Solar estimation** | DLR Building Solar Atlas (primary) · PVGIS API (fallback) |
-| **MaStR check** | Marks buildings already registered in the German PV registry |
-| **Panel detection** | Optional YOLO-based detection on satellite imagery (requires `leafmap`) |
-| **Flexible filters** | Min. roof area · building type presets · free-text filter |
-| **BBox shortcuts** | Current map view · any loaded layer's extent · city/ZIP geocoding |
-| **Column mapping** | Map arbitrary column names to required fields (Wizard page 2) |
-| **Exports** | QGIS vector layer (graduated colour) · Excel (.xlsx) · GeoPackage |
-| **Non-blocking** | Analysis runs in a background thread; QGIS stays responsive |
+| **Drei Datenquellen** | QGIS-PostgreSQL-Verbindung (ALKIS/PostGIS) · GeoPackage · OpenStreetMap via Overpass-API |
+| **Solarschätzung** | DLR-Gebäudeatlas (primär) · PVGIS REST-API (Fallback) |
+| **MaStR-Abgleich** | Kennzeichnet Gebäude mit bereits registrierten PV-Anlagen |
+| **Panel-Erkennung** | Optionale YOLO-basierte Erkennung auf Satellitenbildern (erfordert `leafmap`) |
+| **Flexible Filter** | Mindestdachfläche · Gebäudetyp-Voreinstellungen · Freitext-Filter |
+| **Suchgebiet** | Aktuelle Kartenansicht · Extent eines Layers · Stadt/PLZ-Geocoding |
+| **Spalten-Zuordnung** | Beliebige Spaltennamen auf Pflichtfelder mappen (Wizard Seite 2) |
+| **Exporte** | QGIS-Vektorlayer (Farbverlauf) · Excel (.xlsx) · GeoPackage |
+| **Nicht-blockierend** | Analyse läuft im Hintergrund-Thread; QGIS bleibt bedienbar |
 
 ---
 
-## Requirements
+## Voraussetzungen
 
-| Requirement | Version |
+| Anforderung | Version |
 |---|---|
 | QGIS | ≥ 3.16 |
-| Python | ≥ 3.9 (ships with QGIS) |
+| Python | ≥ 3.9 (wird mit QGIS mitgeliefert) |
 
-### Python packages (install once in QGIS Python)
+### Python-Pakete (einmalig in QGIS-Python installieren)
 
-Open **QGIS → Plugins → Python Console** and run:
+**QGIS → Erweiterungen → Python-Konsole** öffnen und ausführen:
 
 ```python
 import pip
-# Minimum (Excel export + config):
+
+# Minimum (Excel-Export + Konfiguration):
 pip.main(['install', 'pandas', 'openpyxl', 'pydantic-settings'])
 
-# PostGIS mode:
+# Nur für PostGIS-Modus:
 pip.main(['install', 'psycopg2-binary'])
 
-# Optional – YOLO panel detection:
+# Optional – YOLO-Panel-Erkennung:
 pip.main(['install', 'leafmap', 'ultralytics'])
 ```
 
-`requests` is already bundled with QGIS.
+> OSM/Overpass-Modus benötigt keine zusätzlichen Pakete – nur Python-Stdlib.
 
 ---
 
 ## Installation
 
-1. Download `solar_sites_pv_analysis_vX.X.X.zip` from the
-   [Releases page](https://github.com/LuGIS92/solar_sites_search/releases).
-2. In QGIS: **Plugins → Manage and Install Plugins → Install from ZIP**.
-3. Select the downloaded ZIP → **Install Plugin**.
-4. Enable the plugin if not already checked.
-5. A sun icon appears in the toolbar. Click it to open the analysis panel.
+### Aus dem ZIP (empfohlen)
 
-### Build the ZIP yourself
+Noch kein offizieller Release vorhanden. ZIP selbst bauen:
 
 ```bash
-git clone https://github.com/LuGIS92/solar_sites_search.git
-cd solar_sites_search
+git clone https://github.com/LuGIS92/solar-sites-qgis.git
+cd solar-sites-qgis
 bash scripts/build_zip.sh
-# → dist/solar_sites_pv_analysis_vX.X.X.zip
+# → dist/solar_sites_pv_analysis_v2.0.0.zip
 ```
 
+Dann in QGIS: **Erweiterungen → Erweiterungen verwalten → Aus ZIP installieren**.
+
+### Entwickler-Installation (Symlink)
+
+```bash
+git clone https://github.com/LuGIS92/solar-sites-qgis.git
+cd solar-sites-qgis
+
+# macOS:
+ln -sfn "$(pwd)/qgis_solar_plugin" \
+  ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/qgis_solar_plugin
+
+# Linux:
+ln -sfn "$(pwd)/qgis_solar_plugin" \
+  ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/qgis_solar_plugin
+```
+
+Den Symlink **nur einmal** setzen – er bleibt dauerhaft erhalten.  
+Änderungen im Repository sind sofort aktiv; nur Plugin Reloader (F5) drücken.
+
 ---
 
-## Quick Start (with sample data)
+## Schnellstart (mit Beispieldaten)
 
-A small test GeoPackage with 20 synthetic buildings in the Cologne area is
-included in `data/sample.gpkg`.
+Im Ordner `data/sample.gpkg` liegen 20 synthetische Gebäude im Kölner Raum.
 
-1. Open QGIS and load a basemap (e.g. OpenStreetMap via QuickMapServices).
-2. Open the Solar Sites panel (toolbar or **Plugins → Solar Sites**).
-3. **Step 1 – Data source:** select *GeoPackage*, choose `data/sample.gpkg`,
-   layer `buildings`.
-4. **Step 2 – Column mapping:** click *Load columns*, then *Next* (auto-detect works).
-5. **Step 3 – Search area:** click *Current map view* or type `Köln` and press Enter.
-6. **Step 4 – Filters:** leave defaults, click **Start Analysis**.
-7. A new point layer *Solar XXXX* appears on the map, colour-coded by annual yield.
-   Green = high potential, red = low potential.
+1. QGIS öffnen, Hintergrundkarte laden (z.B. OpenStreetMap via QuickMapServices).
+2. Solar Sites Panel öffnen (Toolbar oder **Erweiterungen → Solar Sites**).
+3. **Seite 1 – Datenquelle:** *GeoPackage* wählen, `data/sample.gpkg`, Layer `buildings`.
+4. **Seite 2 – Spalten:** *Spalten laden* klicken, dann *Weiter* (automatische Erkennung).
+5. **Seite 3 – Suchgebiet:** *Aktuelle Kartenansicht übernehmen* oder `Köln` eingeben.
+6. **Seite 4 – Filter:** Standardwerte lassen, **Analyse starten** klicken.
+7. Ein neuer Punkt-Layer *Solar XXXX* erscheint – farbcodiert nach Jahresertrag (grün = hohes Potenzial).
+
+### Ohne eigene Gebäudedaten – OSM-Modus
+
+1. **Seite 1 – Datenquelle:** *OpenStreetMap (Overpass)* wählen.
+2. Seite 2 (Spalten) wird automatisch übersprungen.
+3. **Seite 3 – Suchgebiet:** Stadt eingeben oder Kartenausschnitt übernehmen.
+4. **Seite 4 – Filter:** Gebäude-Limit setzen (Empfehlung: 100–200 für erste Tests).
+5. Analyse starten – Gebäude werden live aus OpenStreetMap geladen.
+
+> **Hinweis OSM-Modus:** Für große Gebiete (> 5 km²) kann die Overpass-Abfrage mehrere
+> Minuten dauern. Gebäudetyp-Filter nutzt OSM-Tags (`house`, `industrial`, …) statt ALKIS-Codes.
 
 ---
 
-## Data Sources
+## Datenquellen
 
 ### Option A – PostGIS (ALKIS)
 
-Requires a PostgreSQL/PostGIS database with ALKIS building data.
+Erfordert eine PostgreSQL/PostGIS-Datenbank mit ALKIS-Gebäudedaten.
 
-| Setting | Default | Description |
+| Einstellung | Standard | Beschreibung |
 |---|---|---|
-| Connection | — | QGIS-managed PostgreSQL connection |
-| Buildings table | `deutschland.gebaeude_deutschland_tbl` | ALKIS polygon table (SRID 3035) |
-| MaStR table | `deutschland.mastr_solar` | Point table with PV registrations (optional) |
+| Verbindung | — | In QGIS gespeicherte PostgreSQL-Verbindung |
+| Gebäude-Tabelle | `deutschland.gebaeude_deutschland_tbl` | ALKIS-Polygon-Tabelle (SRID 3035) |
+| MaStR-Tabelle | `deutschland.mastr_solar` | Punkt-Tabelle mit PV-Registrierungen (optional) |
 
-**Expected columns (ALKIS standard):**
+**Erwartete Spalten (ALKIS-Standard):**
 
-| Column | Type | Notes |
+| Spalte | Typ | Hinweis |
 |---|---|---|
-| `gml_id` | TEXT | Unique building ID |
-| `geom` | GEOMETRY(Polygon, 3035) | Footprint |
-| `area` | DOUBLE PRECISION | Roof area m² (or computed via ST_Area) |
-| `gebaeudefunktion` | TEXT | ALKIS building function code |
-| `roof_type` | TEXT | Roof shape (optional) |
+| `gml_id` | TEXT | Eindeutige Gebäude-ID |
+| `geom` | GEOMETRY(Polygon, 3035) | Grundriss |
+| `area` | DOUBLE PRECISION | Dachfläche m² (oder via ST_Area berechnet) |
+| `gebaeudefunktion` | TEXT | ALKIS-Gebäudefunktionscode |
+| `roof_type` | TEXT | Dachform (optional) |
 
-Non-standard column names can be remapped on Wizard page 2.
+Abweichende Spaltennamen können auf Wizard-Seite 2 zugeordnet werden.
 
 ### Option B – GeoPackage
 
-Any polygon layer works. The plugin auto-detects common column names and
-falls back gracefully when fields are missing.
+Jede Polygon-Layer-Datei funktioniert. Das Plugin erkennt gängige Spaltennamen
+automatisch und fällt graceful zurück wenn Felder fehlen.
 
-**Create a test GeoPackage from your PostGIS:**
-
-```bash
-python scripts/export_test_gpkg.py \
-  --host localhost --dbname energy \
-  --user readonly --password secret \
-  --buildings-table deutschland.gebaeude_deutschland_tbl \
-  --mastr-table deutschland.mastr_solar \
-  --output test.gpkg \
-  --city-bbox "50.920,6.930,50.960,6.990"
-```
-
-**MaStR as GeoPackage** – easiest via
-[open-mastr](https://open-mastr.readthedocs.io/en/latest/advanced/):
+**MaStR als GeoPackage** – am einfachsten via [open-mastr](https://open-mastr.readthedocs.io/en/latest/advanced/):
 
 ```bash
 pip install open-mastr
@@ -142,118 +157,133 @@ from open_mastr import Mastr
 db = Mastr()
 db.download(date='today')
 db.to_csv()
-# Then import the solar CSV into QGIS → save as GeoPackage
+# Solar-CSV in QGIS importieren → Als GeoPackage speichern
 "
 ```
 
+### Option C – OpenStreetMap (Overpass-API)
+
+Keine lokalen Daten nötig. Gebäude werden live aus OSM geladen.
+
+- Weltweit einsetzbar
+- Keine zusätzliche Installation
+- Standard-Overpass-Endpunkt: `https://overpass-api.de/api/interpreter`
+- Alternative Instanzen können in der UI konfiguriert werden
+- Gebäudetyp-Filter nutzt OSM-Tags: `house`, `apartments`, `industrial`, `warehouse`, …
+
 ---
 
-## Output Fields
+## Ausgabe-Felder
 
-| Field | Unit | Source |
+| Feld | Einheit | Quelle |
 |---|---|---|
-| `annual_energy_kwh` | kWh/yr | DLR or PVGIS |
-| `installable_kwp` | kWp | DLR panel area or estimated |
-| `usable_area_sqm` | m² | DLR or estimated |
-| `pvgis_irradiation` | kWh/kWp/yr | PVGIS API |
-| `dlr_annual_kwh` | kWh/yr | DLR Building Solar Atlas |
-| `data_source` | `dlr` / `pvgis` | Which source was used |
-| `mastr_registered` | 0 / 1 | Found in MaStR registry |
-| `mastr_capacity_kw` | kW | Total registered capacity nearby |
-| `panels_detected` | 0 / 1 | YOLO detection result |
-| `building_type` | text | ALKIS code or source value |
-| `area_sqm` | m² | Building footprint area |
+| `annual_energy_kwh` | kWh/Jahr | DLR oder PVGIS |
+| `installable_kwp` | kWp | DLR-Modulfläche oder Schätzung |
+| `usable_area_sqm` | m² | DLR oder Schätzung |
+| `pvgis_irradiation` | kWh/kWp/Jahr | PVGIS-API |
+| `dlr_annual_kwh` | kWh/Jahr | DLR-Gebäudeatlas (Rohwert) |
+| `data_source` | `dlr` / `pvgis` | Verwendete Quelle |
+| `mastr_registered` | 0 / 1 | Im MaStR gefunden |
+| `mastr_capacity_kw` | kW | Registrierte Gesamtleistung in der Nähe |
+| `panels_detected` | 0 / 1 | YOLO-Erkennungsergebnis |
+| `building_type` | Text | ALKIS-Code oder OSM-Tag |
+| `building_source` | Text | `alkis`, `osm`, … |
+| `area_sqm` | m² | Grundfläche |
 
 ---
 
-## Building Type Filter
+## Gebäudetyp-Filter
 
-The filter on Wizard page 4 accepts:
-
-| Input | Effect |
+| Eingabe | Wirkung |
 |---|---|
-| *(empty)* | All buildings |
-| *Wohngebäude* preset | ALKIS codes `31001_1xxx` |
-| *Gewerbe / Industrie* preset | ALKIS codes `31001_2xxx` / `31001_3xxx` |
-| `31001_2620` | Exactly one ALKIS type (e.g. warehouse) |
-| `industrial` | Free-text – any `building_type` containing this string |
-| `Lager` | Same, case-insensitive |
+| *(leer)* | Alle Gebäude |
+| Voreinstellung *Wohngebäude* | ALKIS `31001_1xxx` / OSM: `house`, `apartments`, … |
+| Voreinstellung *Gewerbe/Industrie* | ALKIS `31001_2xxx`/`31001_3xxx` / OSM: `industrial`, `warehouse`, … |
+| `31001_2620` | Genau ein ALKIS-Typ (z.B. Lagerhalle) |
+| `industrial` | Freitext – enthält diesen String (Groß-/Kleinschreibung egal) |
 
 ---
 
-## Configuration (`.env`)
+## Konfiguration (`.env`)
 
-Copy `.env.example` to `.env` next to the plugin and adjust as needed.
-The plugin works without a `.env` file using sensible defaults.
+`.env.example` nach `.env` kopieren und anpassen.  
+Das Plugin funktioniert auch ohne `.env`-Datei mit sinnvollen Standardwerten.
 
 ```ini
-# DLR Solar Atlas (public service, no API key)
-DLR_ZOOM=19                  # Tile zoom level (17-19 recommended)
+# DLR-Gebäudeatlas (öffentlicher Dienst, kein API-Key)
+DLR_ZOOM=19                  # Tile-Zoom (17–19 empfohlen)
 
-# PVGIS (EU JRC public API, no key)
-PVGIS_SYSTEM_LOSS=14.0       # System losses in %
+# PVGIS (EU JRC, kein Key)
+PVGIS_SYSTEM_LOSS=14.0       # Systemverluste in %
 
-# Solar panel parameters
-PANEL_EFFICIENCY=0.20        # Module efficiency (20 %)
-PANEL_POWER_PER_SQM=0.175    # kWp per m²
-ROOF_COVERAGE_FLAT=0.65      # Usable fraction on flat roofs
-ROOF_COVERAGE_PITCHED=0.55   # Usable fraction on pitched roofs
+# Solarmodul-Parameter
+PANEL_EFFICIENCY=0.20        # Modulwirkungsgrad (20 %)
+PANEL_POWER_PER_SQM=0.175    # kWp pro m²
+ROOF_COVERAGE_FLAT=0.65      # Nutzbare Fläche Flachdach
+ROOF_COVERAGE_PITCHED=0.55   # Nutzbare Fläche Schrägdach
 ```
 
 ---
 
-## Development Setup
+## Repository-Struktur
+
+```
+solar-sites-qgis/
+├── qgis_solar_plugin/       ← QGIS-Plugin (UI-Schicht)
+│   ├── solar_dock.py        ← 5-seitiger Wizard (QStackedWidget)
+│   ├── worker.py            ← Hintergrund-Analyse-Thread
+│   ├── data_sources.py      ← PostGIS + GeoPackage + Overpass
+│   ├── layer_builder.py     ← Ergebnisse → QGIS-Vektorlayer
+│   └── qgis_db_utils.py     ← QGIS-Auth-Manager-Integration
+├── solar_sites/             ← Reine Python-Analysebibliothek (kein QGIS)
+│   ├── solar/               ← estimator, DLR, PVGIS, YOLO-Erkennung
+│   ├── buildings/           ← Gebäude-Finder, Overpass-Client
+│   ├── geocoding/           ← Nominatim-Reverse-Geocoding
+│   └── export/              ← Excel-Export
+├── tests/                   ← pytest-Tests (kein QGIS/DB erforderlich)
+├── data/
+│   └── sample.gpkg          ← 20 Beispielgebäude (Kölner Raum, WGS84)
+└── scripts/
+    ├── build_zip.sh         ← Installierbares Plugin-ZIP bauen
+    └── create_sample_gpkg.py← sample.gpkg erzeugen (einmalig)
+```
+
+---
+
+## Entwicklung
+
+### Tests ausführen
 
 ```bash
-git clone https://github.com/LuGIS92/solar_sites_search.git
-cd solar_sites_search
 pip install -r requirements-dev.txt
-
-# Symlink plugin into QGIS plugins folder (adjust path for your OS/profile)
-# macOS / Linux:
-ln -s "$(pwd)/qgis_solar_plugin" \
-  ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/solar_sites_pv_analysis
-
-# Windows:
-# mklink /D "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\solar_sites_pv_analysis" \
-#   "%CD%\qgis_solar_plugin"
+pytest tests/ -v
 ```
 
-After code changes, reload the plugin in QGIS via the
-[Plugin Reloader](https://plugins.qgis.org/plugins/plugin_reloader/) extension.
+Tests in `tests/` benötigen kein QGIS und keine Datenbankverbindung.  
+QGIS-abhängiger Code wird manuell im Plugin getestet.
 
----
+### Linter
 
-## Repository Structure
-
+```bash
+ruff check .        # Fehler prüfen
+ruff check --fix .  # Auto-Fix
 ```
-solar_sites_search/
-├── qgis_solar_plugin/       ← QGIS plugin (the UI layer)
-│   ├── solar_dock.py        ← 5-page wizard (QStackedWidget)
-│   ├── worker.py            ← Background analysis thread
-│   ├── data_sources.py      ← PostGIS + GeoPackage data access
-│   ├── layer_builder.py     ← Results → QGIS vector layer
-│   └── qgis_db_utils.py     ← QGIS auth manager integration
-├── solar_sites/             ← Pure-Python analysis library
-│   ├── solar/               ← estimator, DLR, PVGIS, YOLO detection
-│   ├── buildings/           ← building finder
-│   ├── geocoding/           ← Nominatim reverse geocoding
-│   └── export/              ← Excel export
-├── data/
-│   └── sample.gpkg          ← 20 sample buildings (Cologne, WGS84)
-├── scripts/
-│   ├── build_zip.sh         ← Build installable plugin ZIP
-│   ├── create_sample_gpkg.py← Generate sample.gpkg (run once)
-│   └── export_test_gpkg.py  ← Export test GeoPackage from PostGIS
-└── migrations/              ← SQL for optional PostGIS result storage
+
+### Release erstellen
+
+```bash
+# version= in metadata.txt hochsetzen, dann:
+git tag v2.0.1
+git push origin v2.0.1
+# → GitHub Actions baut ZIP und erstellt GitHub Release automatisch
 ```
 
 ---
 
-## License
+## Lizenz
 
 [GNU General Public License v3.0](LICENSE)
 
-This plugin is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or any later version.
+Dieses Plugin ist freie Software: du kannst es unter den Bedingungen der
+GNU General Public License, Version 3 oder höher, weitergeben und/oder
+modifizieren.
