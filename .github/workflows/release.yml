@@ -1,0 +1,39 @@
+name: Release
+
+# Triggered when you push a version tag: git tag v1.0.1 && git push --tags
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-release:
+    name: Build ZIP and publish GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create the release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build plugin ZIP
+        run: bash scripts/build_zip.sh
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Solar Sites PV Plugin ${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## Installation
+            1. Download `solar_sites_pv_analysis_*.zip` below.
+            2. In QGIS: **Plugins → Manage and Install Plugins → Install from ZIP**.
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+            for what changed in this release.
+          files: dist/solar_sites_pv_analysis_*.zip
+          draft: false
+          prerelease: false

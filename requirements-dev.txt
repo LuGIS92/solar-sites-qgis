@@ -1,0 +1,8 @@
+# Development dependencies (not needed to run the plugin)
+ruff>=0.4
+pytest>=7.4
+pytest-cov>=4.1
+pydantic-settings>=2.0
+pandas>=2.0
+openpyxl>=3.1
+requests>=2.31

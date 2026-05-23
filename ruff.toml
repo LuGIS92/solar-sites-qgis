@@ -1,0 +1,24 @@
+# Ruff linter configuration
+# Docs: https://docs.astral.sh/ruff/
+
+target-version = "py39"   # QGIS ships Python 3.9
+
+line-length = 100
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (undefined names, unused imports)
+    "W",   # pycodestyle warnings
+    "I",   # isort (import order)
+]
+
+ignore = [
+    "E501",  # line too long – handled by line-length above
+    "F401",  # imported but unused – PyQGIS wildcard imports are common
+    "E402",  # module level import not at top – needed for sys.path tricks
+]
+
+[lint.per-file-ignores]
+# QGIS plugin files import qgis.* which CI can't resolve
+"qgis_solar_plugin/*.py" = ["F821", "F811"]

@@ -1,0 +1,37 @@
+name: CI
+
+# Runs on every push and pull request
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Tests & lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ruff pytest pydantic-settings requests pandas openpyxl
+
+      - name: Lint with ruff
+        run: ruff check solar_sites/ qgis_solar_plugin/
+
+      - name: Syntax-check plugin files
+        run: python -m compileall -q qgis_solar_plugin/ solar_sites/
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        # Tests that don't need QGIS or a live DB run fine here.
+        # PyQGIS-specific code is only exercised manually / in QGIS.

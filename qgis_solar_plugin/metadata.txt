@@ -1,0 +1,19 @@
+[general]
+name=Solar Sites PV-Analyse
+qgisMinimumVersion=3.16
+description=PV-Potenzialanalyse für Gebäude aus ALKIS/GeoPackage (PVGIS + DLR + MaStR)
+version=2.0.0
+author=Solar Sites
+email=info@solar-sites.de
+about=Analysiert das Solarpotenzial von Gebäuden.
+ Datenquellen: QGIS-PostgreSQL-Verbindung (ALKIS/PostGIS) oder GeoPackage.
+ Strahlungsdaten via PVGIS und DLR-Gebäudeatlas.
+ MaStR-Abfrage bei PostGIS-Verbindung.
+ Ergebnisse als QGIS-Vektorlayer + Excel + GeoPackage-Export.
+tracker=https://github.com/LuGIS92/solar-sites-qgis/issues
+repository=https://github.com/LuGIS92/solar-sites-qgis
+tags=solar,pv,energie,alkis,gebaeude,pvgis,dlr
+homepage=https://github.com/LuGIS92/solar-sites-qgis
+category=Analysis
+experimental=False
+deprecated=False
