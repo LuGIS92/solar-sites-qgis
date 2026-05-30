@@ -3,6 +3,19 @@
 Alle wesentlichen Änderungen werden hier dokumentiert.
 Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [2.1.0] - 2026-05-30
+
+### Geändert
+- **QGIS 4 / Qt6-Kompatibilität**: unskopierte Enums voll qualifiziert
+  (`Qt.AlignmentFlag.AlignCenter`, `Qt.DockWidgetArea.RightDockWidgetArea`,
+  `QFrame.Shape.*` / `QFrame.Shadow.*`); `metadata.txt` mit `qgisMaximumVersion=4.99`
+
+### CI
+- QGIS-Integrations-Tests via `pytest-qgis` + `qgis/qgis`-Docker (QGIS 3 LTR + QGIS 4)
+- CI triggert jetzt auch auf Release-Tags (`v*.*.*`)
+
+---
+
 ## [2.0.0] - 2026-05-23
 
 ### Neu
