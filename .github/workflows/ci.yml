@@ -39,7 +39,7 @@ jobs:
 
       - name: Tests mit Coverage
         run: |
-          pytest tests/ -v --tb=short \
+          pytest tests/ --ignore=tests/qgis/ -v --tb=short \
             --cov=solar_sites --cov=qgis_solar_plugin \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml
@@ -58,3 +58,35 @@ jobs:
           except Exception as e:
               print(f"Coverage-Report konnte nicht gelesen werden: {e}")
           EOF
+
+  # ---------------------------------------------------------------------------
+  # QGIS-Integration-Tests (echter QGIS-Layer, Renderer, GeoPackage-Export)
+  # ---------------------------------------------------------------------------
+  test-qgis:
+    name: QGIS ${{ matrix.label }} Integration
+    runs-on: ubuntu-latest
+    # QGIS 4 / Qt6 gilt als "experimental" – Fehler brechen den Gesamt-Build nicht
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "3 LTR"
+            image: qgis/qgis:ltr
+            experimental: false
+          - label: "4 (Qt6)"
+            image: qgis/qgis:latest
+            experimental: true
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: pytest-qgis installieren
+        run: pip3 install pytest pytest-qgis
+
+      - name: QGIS-Integration-Tests
+        run: |
+          xvfb-run -s "+extension GLX -screen 0 1024x768x24" \
+            pytest tests/qgis/ -v --tb=short

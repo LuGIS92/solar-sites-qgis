@@ -31,6 +31,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 - Alle 52 ruff-Lint-Fehler behoben: Import-Sortierung (I001), Semikolon-Zeilen (E702),
   ambiguous Variable `l` (E741), Multi-Import (E401), f-String ohne Platzhalter (F541)
 
+### CI
+- **QGIS-Integrations-Tests** via `pytest-qgis` und `qgis/qgis`-Docker-Images:
+  6 Tests für `layer_builder.py` (Layer-Validität, Feldschema, Symbologie, GeoPackage-Export)
+- Matrix-Job: QGIS 3 LTR (Pflicht) + QGIS 4 Qt6 (experimental, Fehler bricht Build nicht)
+- Regulärer Unit-Test-Job ignoriert `tests/qgis/` (kein QGIS nötig, bleibt schnell)
+
 ---
 
 ## [1.0.0] - 2025-05-23
