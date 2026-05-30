@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction
 
 _ICON = str(Path(__file__).resolve().parent / "icon.svg")
 
