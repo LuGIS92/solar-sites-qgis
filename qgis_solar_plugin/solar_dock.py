@@ -105,8 +105,8 @@ class SolarDockWidget(QDockWidget):
         outer.addWidget(self._step_bar)
 
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         outer.addWidget(sep)
 
         # Haupt-Stack (5 Seiten)
@@ -114,12 +114,12 @@ class SolarDockWidget(QDockWidget):
         scroll = QScrollArea()
         scroll.setWidget(self._pages)
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         outer.addWidget(scroll, 1)
 
         sep2 = QFrame()
-        sep2.setFrameShape(QFrame.HLine)
-        sep2.setFrameShadow(QFrame.Sunken)
+        sep2.setFrameShape(QFrame.Shape.HLine)
+        sep2.setFrameShadow(QFrame.Shadow.Sunken)
         outer.addWidget(sep2)
 
         # Navigationsleiste
@@ -147,7 +147,7 @@ class SolarDockWidget(QDockWidget):
         scroll_root = QScrollArea()
         scroll_root.setWidget(root)
         scroll_root.setWidgetResizable(True)
-        scroll_root.setFrameShape(QFrame.NoFrame)
+        scroll_root.setFrameShape(QFrame.Shape.NoFrame)
         self.setWidget(root)
 
     def _build_step_bar(self) -> QWidget:
@@ -163,7 +163,7 @@ class SolarDockWidget(QDockWidget):
                 sep.setStyleSheet("color:#aaa; margin:0 2px;")
                 layout.addWidget(sep)
             lbl = QLabel(f"{i+1}. {name}")
-            lbl.setAlignment(Qt.AlignCenter)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(lbl)
             self._step_labels.append(lbl)
         layout.addStretch()
@@ -440,8 +440,8 @@ class SolarDockWidget(QDockWidget):
 
         # MaStR-spezifische Spalten
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(sep)
         layout.addWidget(QLabel("<b>MaStR-Tabelle / -Layer</b> (optional)"))
 
@@ -530,8 +530,8 @@ class SolarDockWidget(QDockWidget):
 
         # ── Schnellauswahl ────────────────────────────────────────────────────
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(sep)
         layout.addWidget(QLabel("Schnellauswahl:"))
 

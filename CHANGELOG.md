@@ -16,6 +16,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
   HTTP-Mocking, Filterlogik, SQL-Injection-Schutz
 
 ### Geändert
+- **QGIS 4 / Qt6-Kompatibilität** hergestellt (lauffähig unter Qt5 **und** Qt6):
+  - alle `PyQt5.*`-Importe auf den `qgis.PyQt`-Shim umgestellt
+  - unskopierte Enums voll qualifiziert (`Qt.AlignCenter` → `Qt.AlignmentFlag.AlignCenter`,
+    `Qt.RightDockWidgetArea` → `Qt.DockWidgetArea.RightDockWidgetArea`,
+    `QFrame.HLine/Sunken/NoFrame` → `QFrame.Shape.*` / `QFrame.Shadow.*`)
+  - `QVariant`-Feldtypen mit Fallback auf `QMetaType.Type.*` (PyQt6 kennt `QVariant.String` nicht)
+  - `metadata.txt`: `qgisMaximumVersion=4.99` ergänzt
 - HTTP-Client für Overpass von `requests` auf `urllib` (Python-Stdlib) umgestellt –
   robuster in QGIS-Python-Umgebung, keine externe Abhängigkeit
 - README vollständig auf Deutsch überarbeitet und auf drei Datenquellen aktualisiert

@@ -27,7 +27,7 @@ class SolarPlugin:
         self.iface.addPluginToMenu("&Solar Sites", self.action)
 
         self.dock = SolarDockWidget(self.iface, self.iface.mainWindow())
-        self.iface.mainWindow().addDockWidget(Qt.RightDockWidgetArea, self.dock)
+        self.iface.mainWindow().addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock)
         self.dock.visibilityChanged.connect(self.action.setChecked)
         self.dock.hide()
 
