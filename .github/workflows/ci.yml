@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: ["main", "claude/**"]
+    tags: ["v*.*.*"]       # Tests laufen auch beim Release-Tag
   pull_request:
     branches: ["main"]
 
