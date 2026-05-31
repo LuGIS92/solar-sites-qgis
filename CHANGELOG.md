@@ -3,6 +3,13 @@
 Alle wesentlichen Änderungen werden hier dokumentiert.
 Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [Unreleased]
+
+### Geändert
+- `.gitignore` ergänzt um `*.pt` / `*.pth` / `*.onnx`, `*.weights` und `.claude/`
+
+---
+
 ## [2.2.0] - 2026-05-31
 
 ### Neu
