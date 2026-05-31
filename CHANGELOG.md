@@ -3,6 +3,23 @@
 Alle wesentlichen Änderungen werden hier dokumentiert.
 Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [2.2.0] - 2026-05-31
+
+### Neu
+- **MaStR im OSM-Modus**: optionaler GeoPackage-Picker auf Seite 1 –
+  PV-Bestandsanlagen lassen sich jetzt auch bei OSM-Datenquellen abgleichen
+- **„Gesamten Layer als Suchgebiet"**: neuer Schnellauswahl-Button auf Seite 2,
+  setzt BBox automatisch auf den vollen Extent des gewählten GeoPackage-Layers
+  oder der PostGIS-Tabelle (`ST_Extent`); kein manuelles Koordinaten-Eintragen nötig
+
+### Behoben
+- `skip_mastr`-Checkbox auf Seite 3 ist im OSM-Modus ohne MaStR-GPKG ausgeblendet
+  (war vorher sichtbar, aber wirkungslos)
+- `config.py` läuft jetzt auch ohne `pydantic-settings` (Fallback auf stdlib `.env`-Parser);
+  behebt `ImportError: cannot import name 'Sentinel' from 'typing_extensions'` in QGIS 4
+
+---
+
 ## [2.1.0] - 2026-05-30
 
 ### Geändert
