@@ -3,6 +3,43 @@
 Alle wesentlichen Änderungen werden hier dokumentiert.
 Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [Unreleased]
+
+### Geändert
+- `.gitignore` ergänzt um `*.pt` / `*.pth` / `*.onnx`, `*.weights` und `.claude/`
+
+---
+
+## [2.2.0] - 2026-05-31
+
+### Neu
+- **MaStR im OSM-Modus**: optionaler GeoPackage-Picker auf Seite 1 –
+  PV-Bestandsanlagen lassen sich jetzt auch bei OSM-Datenquellen abgleichen
+- **„Gesamten Layer als Suchgebiet"**: neuer Schnellauswahl-Button auf Seite 2,
+  setzt BBox automatisch auf den vollen Extent des gewählten GeoPackage-Layers
+  oder der PostGIS-Tabelle (`ST_Extent`); kein manuelles Koordinaten-Eintragen nötig
+
+### Behoben
+- `skip_mastr`-Checkbox auf Seite 3 ist im OSM-Modus ohne MaStR-GPKG ausgeblendet
+  (war vorher sichtbar, aber wirkungslos)
+- `config.py` läuft jetzt auch ohne `pydantic-settings` (Fallback auf stdlib `.env`-Parser);
+  behebt `ImportError: cannot import name 'Sentinel' from 'typing_extensions'` in QGIS 4
+
+---
+
+## [2.1.0] - 2026-05-30
+
+### Geändert
+- **QGIS 4 / Qt6-Kompatibilität**: unskopierte Enums voll qualifiziert
+  (`Qt.AlignmentFlag.AlignCenter`, `Qt.DockWidgetArea.RightDockWidgetArea`,
+  `QFrame.Shape.*` / `QFrame.Shadow.*`); `metadata.txt` mit `qgisMaximumVersion=4.99`
+
+### CI
+- QGIS-Integrations-Tests via `pytest-qgis` + `qgis/qgis`-Docker (QGIS 3 LTR + QGIS 4)
+- CI triggert jetzt auch auf Release-Tags (`v*.*.*`)
+
+---
+
 ## [2.0.0] - 2026-05-23
 
 ### Neu
@@ -16,6 +53,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
   HTTP-Mocking, Filterlogik, SQL-Injection-Schutz
 
 ### Geändert
+- **QGIS 4 / Qt6-Kompatibilität** hergestellt (lauffähig unter Qt5 **und** Qt6):
+  - alle `PyQt5.*`-Importe auf den `qgis.PyQt`-Shim umgestellt
+  - unskopierte Enums voll qualifiziert (`Qt.AlignCenter` → `Qt.AlignmentFlag.AlignCenter`,
+    `Qt.RightDockWidgetArea` → `Qt.DockWidgetArea.RightDockWidgetArea`,
+    `QFrame.HLine/Sunken/NoFrame` → `QFrame.Shape.*` / `QFrame.Shadow.*`)
+  - `QVariant`-Feldtypen mit Fallback auf `QMetaType.Type.*` (PyQt6 kennt `QVariant.String` nicht)
+  - `metadata.txt`: `qgisMaximumVersion=4.99` ergänzt
 - HTTP-Client für Overpass von `requests` auf `urllib` (Python-Stdlib) umgestellt –
   robuster in QGIS-Python-Umgebung, keine externe Abhängigkeit
 - README vollständig auf Deutsch überarbeitet und auf drei Datenquellen aktualisiert
@@ -23,6 +67,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ### Behoben
 - Alle 52 ruff-Lint-Fehler behoben: Import-Sortierung (I001), Semikolon-Zeilen (E702),
   ambiguous Variable `l` (E741), Multi-Import (E401), f-String ohne Platzhalter (F541)
+
+### CI
+- **QGIS-Integrations-Tests** via `pytest-qgis` und `qgis/qgis`-Docker-Images:
+  6 Tests für `layer_builder.py` (Layer-Validität, Feldschema, Symbologie, GeoPackage-Export)
+- Matrix-Job: QGIS 3 LTR (Pflicht) + QGIS 4 Qt6 (experimental, Fehler bricht Build nicht)
+- Regulärer Unit-Test-Job ignoriert `tests/qgis/` (kein QGIS nötig, bleibt schnell)
 
 ---
 

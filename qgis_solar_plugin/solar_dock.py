@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QFont
+from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDockWidget,
@@ -105,8 +105,8 @@ class SolarDockWidget(QDockWidget):
         outer.addWidget(self._step_bar)
 
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         outer.addWidget(sep)
 
         # Haupt-Stack (5 Seiten)
@@ -114,12 +114,12 @@ class SolarDockWidget(QDockWidget):
         scroll = QScrollArea()
         scroll.setWidget(self._pages)
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         outer.addWidget(scroll, 1)
 
         sep2 = QFrame()
-        sep2.setFrameShape(QFrame.HLine)
-        sep2.setFrameShadow(QFrame.Sunken)
+        sep2.setFrameShape(QFrame.Shape.HLine)
+        sep2.setFrameShadow(QFrame.Shadow.Sunken)
         outer.addWidget(sep2)
 
         # Navigationsleiste
@@ -147,7 +147,7 @@ class SolarDockWidget(QDockWidget):
         scroll_root = QScrollArea()
         scroll_root.setWidget(root)
         scroll_root.setWidgetResizable(True)
-        scroll_root.setFrameShape(QFrame.NoFrame)
+        scroll_root.setFrameShape(QFrame.Shape.NoFrame)
         self.setWidget(root)
 
     def _build_step_bar(self) -> QWidget:
@@ -163,7 +163,7 @@ class SolarDockWidget(QDockWidget):
                 sep.setStyleSheet("color:#aaa; margin:0 2px;")
                 layout.addWidget(sep)
             lbl = QLabel(f"{i+1}. {name}")
-            lbl.setAlignment(Qt.AlignCenter)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(lbl)
             self._step_labels.append(lbl)
         layout.addStretch()
@@ -388,6 +388,37 @@ class SolarDockWidget(QDockWidget):
         timeout_row.addStretch()
         osml.addLayout(timeout_row)
 
+        # MaStR-GeoPackage (optional, für Bestandsanlagen-Abgleich)
+        sep_osm = QFrame()
+        sep_osm.setFrameShape(QFrame.Shape.HLine)
+        sep_osm.setFrameShadow(QFrame.Shadow.Sunken)
+        osml.addWidget(sep_osm)
+        osml.addWidget(QLabel("<b>MaStR-Daten (optional)</b>"))
+        osm_mastr_note = QLabel(
+            "PV-Bestandsanlagen aus lokalem GeoPackage abgleichen.\n"
+            "Leer lassen → MaStR-Abfrage deaktiviert."
+        )
+        osm_mastr_note.setStyleSheet("color:#555; font-size:10px;")
+        osml.addWidget(osm_mastr_note)
+
+        osm_mastr_row = QHBoxLayout()
+        self._osm_mastr_path = QLineEdit()
+        self._osm_mastr_path.setPlaceholderText("Pfad zur MaStR .gpkg (optional) …")
+        osm_mastr_row.addWidget(self._osm_mastr_path)
+        osm_mastr_btn = QPushButton("…")
+        osm_mastr_btn.setFixedWidth(26)
+        osm_mastr_btn.clicked.connect(
+            lambda: self._browse_file(self._osm_mastr_path, "MaStR-GeoPackage")
+        )
+        osm_mastr_row.addWidget(osm_mastr_btn)
+        osml.addLayout(osm_mastr_row)
+
+        osm_mastr_lyr_row = QHBoxLayout()
+        osm_mastr_lyr_row.addWidget(QLabel("MaStR-Layer:"))
+        self._osm_mastr_layer = QLineEdit("mastr_solar")
+        osm_mastr_lyr_row.addWidget(self._osm_mastr_layer)
+        osml.addLayout(osm_mastr_lyr_row)
+
         self._ds_stack.addWidget(osm)
 
         layout.addWidget(self._ds_stack)
@@ -440,8 +471,8 @@ class SolarDockWidget(QDockWidget):
 
         # MaStR-spezifische Spalten
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(sep)
         layout.addWidget(QLabel("<b>MaStR-Tabelle / -Layer</b> (optional)"))
 
@@ -530,10 +561,22 @@ class SolarDockWidget(QDockWidget):
 
         # ── Schnellauswahl ────────────────────────────────────────────────────
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(sep)
         layout.addWidget(QLabel("Schnellauswahl:"))
+
+        # Nur sichtbar im GeoPackage- oder PostGIS-Modus (Extent aus Datei/Tabelle)
+        self._whole_layer_btn = QPushButton("📦  Gesamten Layer als Suchgebiet verwenden")
+        self._whole_layer_btn.setToolTip(
+            "GeoPackage: liest Extent direkt aus der gewählten Datei.\n"
+            "PostGIS: fragt ST_Extent der Gebäude-Tabelle ab.\n\n"
+            "Alle Gebäude im Layer / in der Tabelle werden analysiert –\n"
+            "kein Kartenausschnitt nötig."
+        )
+        self._whole_layer_btn.clicked.connect(self._bbox_from_whole_source)
+        self._whole_layer_btn.setVisible(False)  # wird in _update_area_page() eingeblendet
+        layout.addWidget(self._whole_layer_btn)
 
         canvas_btn = QPushButton("🗺  Aktuelle Kartenansicht übernehmen")
         canvas_btn.setToolTip(
@@ -692,6 +735,10 @@ class SolarDockWidget(QDockWidget):
         self._current_page = page
         self._pages.setCurrentIndex(page)
         self._update_nav()
+        if page == 2:
+            self._update_area_page()
+        elif page == 3:
+            self._update_filter_page()
 
     def _skip_column_page(self) -> None:
         for cb in self._map_inputs.values():
@@ -793,9 +840,13 @@ class SolarDockWidget(QDockWidget):
             return PostGISSource(dsn, self._pg_table.text().strip(), mastr, column_map=col_map)
         if self._ds_osm.isChecked():
             from .data_sources import OverpassSource
+            mastr_path = self._osm_mastr_path.text().strip() or None
+            mastr_lyr  = self._osm_mastr_layer.text().strip() or "mastr_solar"
             return OverpassSource(
                 overpass_url=self._osm_url.text().strip(),
                 timeout=self._osm_timeout.value(),
+                mastr_gpkg_path=mastr_path,
+                mastr_layer=mastr_lyr,
             )
         from .data_sources import GeoPackageSource
         path = self._gpkg_path.text().strip()
@@ -876,6 +927,82 @@ class SolarDockWidget(QDockWidget):
                         break
         except Exception:
             pass
+
+    def _update_area_page(self) -> None:
+        """Passt Seite 2 an die gewählte Datenquelle an (Button-Sichtbarkeit)."""
+        is_gpkg    = self._ds_gpkg.isChecked()
+        is_postgis = self._ds_postgis.isChecked()
+        self._whole_layer_btn.setVisible(is_gpkg or is_postgis)
+        if is_gpkg:
+            self._whole_layer_btn.setText("📦  Gesamten GeoPackage-Layer als Suchgebiet")
+        elif is_postgis:
+            self._whole_layer_btn.setText("🗄  Gesamte PostGIS-Tabelle als Suchgebiet")
+
+    def _update_filter_page(self) -> None:
+        """Passt Seite 3 an die gewählte Datenquelle an (MaStR-Checkbox)."""
+        is_osm = self._ds_osm.isChecked()
+        if is_osm:
+            has_mastr = bool(self._osm_mastr_path.text().strip())
+            self._skip_mastr.setVisible(has_mastr)
+            if not has_mastr:
+                self._skip_mastr.setChecked(True)  # auto: kein MaStR → Abfrage überspringen
+        else:
+            self._skip_mastr.setVisible(True)
+
+    def _bbox_from_whole_source(self) -> None:
+        """Extent aus gewählter Datenquelle (GeoPackage oder PostGIS) als BBox setzen."""
+        if self._ds_gpkg.isChecked():
+            self._bbox_from_gpkg_extent()
+        elif self._ds_postgis.isChecked():
+            self._bbox_from_postgis_extent()
+
+    def _bbox_from_gpkg_extent(self) -> None:
+        """Liest Extent direkt aus dem gewählten GeoPackage (kein QGIS-Layer nötig)."""
+        path = self._gpkg_path.text().strip()
+        layer_name = self._gpkg_layer.text().strip() or "buildings"
+        if not path:
+            QMessageBox.warning(self, "GeoPackage", "Kein GeoPackage angegeben (Seite 1).")
+            return
+        try:
+            from qgis.core import (
+                QgsCoordinateReferenceSystem,
+                QgsCoordinateTransform,
+                QgsProject,
+                QgsVectorLayer,
+            )
+            layer = QgsVectorLayer(f"{path}|layername={layer_name}", "_ext_tmp", "ogr")
+            if not layer.isValid():
+                QMessageBox.warning(
+                    self, "GeoPackage", f"Layer '{layer_name}' konnte nicht geladen werden."
+                )
+                return
+            crs_4326 = QgsCoordinateReferenceSystem("EPSG:4326")
+            xform = QgsCoordinateTransform(layer.crs(), crs_4326, QgsProject.instance())
+            ext = xform.transformBoundingBox(layer.extent())
+            self._fill_bbox(ext.yMinimum(), ext.xMinimum(), ext.yMaximum(), ext.xMaximum())
+            self._srch_bbox.setChecked(True)
+        except Exception as exc:
+            QMessageBox.warning(self, "GeoPackage-Extent", f"Fehler: {exc}")
+
+    def _bbox_from_postgis_extent(self) -> None:
+        """Fragt ST_Extent der Gebäude-Tabelle ab und setzt die BBox-Felder."""
+        try:
+            from .data_sources import PostGISSource
+            from .qgis_db_utils import get_dsn
+            dsn   = get_dsn(self._pg_conn.currentText())
+            table = self._pg_table.text().strip()
+            result = PostGISSource.get_extent(dsn, table)
+            if result is None:
+                QMessageBox.warning(
+                    self, "PostGIS-Extent",
+                    f"Extent der Tabelle '{table}' konnte nicht ermittelt werden.\n"
+                    "Verbindung prüfen oder Suchgebiet manuell eintragen."
+                )
+                return
+            self._fill_bbox(*result)
+            self._srch_bbox.setChecked(True)
+        except Exception as exc:
+            QMessageBox.warning(self, "PostGIS-Extent", f"Fehler: {exc}")
 
     def _geocode_city(self) -> dict | None:
         try:

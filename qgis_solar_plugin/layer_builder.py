@@ -3,9 +3,23 @@
 from __future__ import annotations
 
 
+def _field_types():
+    """Gibt (STR, DBL, INT) als Feld-Typ-Konstanten zurück.
+
+    Qt5/PyQt5: QVariant.String / .Double / .Int
+    Qt6/PyQt6: QMetaType.Type.QString / .Double / .Int  (QVariant entfällt in Qt6)
+    qgis.PyQt abstrahiert das – wir versuchen beide Wege.
+    """
+    try:
+        from qgis.PyQt.QtCore import QVariant  # Qt5 und QGIS-4-Shim
+        return QVariant.String, QVariant.Double, QVariant.Int
+    except AttributeError:
+        from qgis.PyQt.QtCore import QMetaType  # reines Qt6 ohne Shim
+        return QMetaType.Type.QString, QMetaType.Type.Double, QMetaType.Type.Int
+
+
 def build_memory_layer(analyses: list[dict], job_id: str):
     """Erstellt einen QGIS-Memory-Layer (Punkte) mit allen Analysewerten."""
-    from PyQt5.QtCore import QVariant
     from qgis.core import (
         QgsFeature,
         QgsField,
@@ -17,23 +31,25 @@ def build_memory_layer(analyses: list[dict], job_id: str):
         QgsVectorLayer,
     )
 
+    STR, DBL, INT = _field_types()
+
     layer = QgsVectorLayer("Point?crs=EPSG:4326", f"Solar {job_id}", "memory")
     pr = layer.dataProvider()
 
     pr.addAttributes([
-        QgsField("building_id",        QVariant.String),
-        QgsField("annual_energy_kwh",  QVariant.Double),
-        QgsField("installable_kwp",    QVariant.Double),
-        QgsField("usable_area_sqm",    QVariant.Double),
-        QgsField("pvgis_irradiation",  QVariant.Double),
-        QgsField("dlr_annual_kwh",     QVariant.Double),
-        QgsField("data_source",        QVariant.String),
-        QgsField("mastr_registered",   QVariant.Int),
-        QgsField("mastr_capacity_kw",  QVariant.Double),
-        QgsField("panels_detected",    QVariant.Int),
-        QgsField("building_type",      QVariant.String),
-        QgsField("building_source",    QVariant.String),
-        QgsField("area_sqm",           QVariant.Double),
+        QgsField("building_id",        STR),
+        QgsField("annual_energy_kwh",  DBL),
+        QgsField("installable_kwp",    DBL),
+        QgsField("usable_area_sqm",    DBL),
+        QgsField("pvgis_irradiation",  DBL),
+        QgsField("dlr_annual_kwh",     DBL),
+        QgsField("data_source",        STR),
+        QgsField("mastr_registered",   INT),
+        QgsField("mastr_capacity_kw",  DBL),
+        QgsField("panels_detected",    INT),
+        QgsField("building_type",      STR),
+        QgsField("building_source",    STR),
+        QgsField("area_sqm",           DBL),
     ])
     layer.updateFields()
 
