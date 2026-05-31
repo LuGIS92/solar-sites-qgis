@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Python einrichten
         uses: actions/setup-python@v6
@@ -82,7 +82,7 @@ jobs:
       image: ${{ matrix.image }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: pytest-qgis installieren
         # --break-system-packages nötig in neueren Debian-Images (PEP 668)
