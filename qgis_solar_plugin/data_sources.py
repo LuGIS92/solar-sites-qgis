@@ -173,6 +173,28 @@ class PostGISSource:
         return False, None
 
     @staticmethod
+    def get_extent(dsn: str, table: str, geom_col: str = "geom") -> tuple[float, float, float, float] | None:
+        """Gibt (min_lat, min_lon, max_lat, max_lon) WGS84 für die gesamte Tabelle zurück."""
+        import psycopg2
+        t = _safe(table, "")
+        g = _safe(geom_col, "geom")
+        if not t:
+            return None
+        try:
+            with psycopg2.connect(dsn) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        f"SELECT ST_YMin(e), ST_XMin(e), ST_YMax(e), ST_XMax(e) "
+                        f"FROM (SELECT ST_Extent(ST_Transform({g}, 4326)) AS e FROM {t}) sub"
+                    )
+                    row = cur.fetchone()
+                    if row and row[0] is not None:
+                        return (float(row[0]), float(row[1]), float(row[2]), float(row[3]))
+        except Exception as exc:
+            log.warning("PostGIS-Extent-Abfrage fehlgeschlagen: %s", exc)
+        return None
+
+    @staticmethod
     def load_columns(dsn: str, table: str) -> list[str]:
         """Liest Spaltenbezeichnungen der Tabelle aus PostgreSQL (für Mapping-UI)."""
         import psycopg2
@@ -395,28 +417,38 @@ _OSM_GEWERBE = frozenset({"industrial", "warehouse", "commercial", "retail", "of
 class OverpassSource:
     """Lädt Gebäude live aus der Overpass-API (OpenStreetMap).
 
-    Keine persistente Verbindung, keine externe Abhängigkeit außer requests.
-    MaStR-Abfrage ist nicht verfügbar (liefert immer False, None).
-
     Gebäudetyp-Filter orientiert sich an OSM-Tags statt ALKIS-Codes:
         wohnen   → building ∈ {house, apartments, detached, …}
         gewerbe  → building ∈ {industrial, warehouse, commercial, …}
         Eigener Filter → freier Textvergleich auf dem "building"-Tag
+
+    Optional: mastr_gpkg_path/mastr_layer für lokale MaStR-GeoPackage.
+    MaStR-Abfragen werden dann an GeoPackageSource.check_mastr delegiert.
+    Ohne GPKG liefert check_mastr immer (False, None).
     """
 
     def __init__(
         self,
         overpass_url: str = "https://overpass-api.de/api/interpreter",
         timeout: int = 60,
+        mastr_gpkg_path: str | None = None,
+        mastr_layer: str | None = "mastr_solar",
     ) -> None:
         self.overpass_url = overpass_url
         self.timeout = timeout
+        # Optionale MaStR-Quelle: GeoPackageSource nur für check_mastr genutzt
+        self._mastr: GeoPackageSource | None = (
+            GeoPackageSource("", "", mastr_gpkg_path=mastr_gpkg_path, mastr_layer=mastr_layer)
+            if mastr_gpkg_path else None
+        )
 
     def connect(self) -> None:
-        pass
+        if self._mastr:
+            self._mastr.connect()
 
     def close(self) -> None:
-        pass
+        if self._mastr:
+            self._mastr.close()
 
     def find_buildings(
         self,
@@ -464,4 +496,6 @@ class OverpassSource:
         return buildings
 
     def check_mastr(self, lat: float, lon: float, radius_m: float = 100) -> tuple[bool, float | None]:
+        if self._mastr:
+            return self._mastr.check_mastr(lat, lon, radius_m)
         return False, None
