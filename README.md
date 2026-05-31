@@ -1,85 +1,72 @@
-# Solar Sites – QGIS PV-Analyse-Plugin
+# Solar Sites – PV-Potenzialanalyse für QGIS
 
 [![CI](https://github.com/LuGIS92/solar-sites-qgis/actions/workflows/ci.yml/badge.svg)](https://github.com/LuGIS92/solar-sites-qgis/actions/workflows/ci.yml)
 [![Lizenz: GPL v3](https://img.shields.io/badge/Lizenz-GPL%20v3-blue.svg)](LICENSE)
-[![QGIS ≥ 3.16](https://img.shields.io/badge/QGIS-%E2%89%A53.16-green)](https://qgis.org)
 
-QGIS-Plugin zur automatisierten PV-Potenzialanalyse auf Gebäudedächern.  
-Gebäude werden aus **ALKIS/PostGIS**, einer **GeoPackage-Datei** oder direkt aus
-**OpenStreetMap** geladen. Strahlungsdaten kommen von **PVGIS** (EU JRC) und dem
-**DLR-Gebäudeatlas**, PV-Bestandsanlagen werden im **Marktstammdatenregister (MaStR)**
-geprüft – alles ohne QGIS zu verlassen.
+Dieses Plugin ist aus einer praktischen Notwendigkeit entstanden: Hunderte von Gebäuden
+auf Solarpotenzial zu prüfen, ohne jedes einzeln manuell in PVGIS oder den DLR-Atlas
+einzugeben. Es lädt Gebäudegrundrisse, fragt Strahlungsdaten ab, gleicht mit dem
+Marktstammdatenregister ab – und gibt am Ende einen farbcodierten Layer und eine
+Excel-Tabelle aus.
 
-> Schwerpunkt Deutschland, funktioniert aber mit jedem Gebäudedatensatz der in QGIS
-> geladen werden kann. OSM-Modus ist weltweit einsetzbar.
+Entwickelt für Deutschland (ALKIS, DLR-Atlas, MaStR), aber der OSM-Modus funktioniert
+weltweit.
+
+**Status:** aktiv in Nutzung, kein poliertes Endprodukt. Feedback und PRs willkommen.
 
 ---
 
-## Funktionen
+## Was das Plugin macht
 
-| Funktion | Details |
-|---|---|
-| **Drei Datenquellen** | QGIS-PostgreSQL-Verbindung (ALKIS/PostGIS) · GeoPackage · OpenStreetMap via Overpass-API |
-| **Solarschätzung** | DLR-Gebäudeatlas (primär) · PVGIS REST-API (Fallback) |
-| **MaStR-Abgleich** | Kennzeichnet Gebäude mit bereits registrierten PV-Anlagen |
-| **Panel-Erkennung** | Optionale YOLO-basierte Erkennung auf Satellitenbildern (erfordert `leafmap`) |
-| **Flexible Filter** | Mindestdachfläche · Gebäudetyp-Voreinstellungen · Freitext-Filter |
-| **Suchgebiet** | Aktuelle Kartenansicht · Extent eines Layers · Stadt/PLZ-Geocoding |
-| **Spalten-Zuordnung** | Beliebige Spaltennamen auf Pflichtfelder mappen (Wizard Seite 2) |
-| **Exporte** | QGIS-Vektorlayer (Farbverlauf) · Excel (.xlsx) · GeoPackage |
-| **Nicht-blockierend** | Analyse läuft im Hintergrund-Thread; QGIS bleibt bedienbar |
+Du gibst eine Bounding-Box oder einen Stadtnamen an. Das Plugin:
+
+1. Lädt Gebäude aus PostGIS (ALKIS), einer GeoPackage-Datei oder OpenStreetMap
+2. Fragt für jedes Gebäude Strahlungsdaten ab – zuerst den DLR-Gebäudeatlas, falls
+   der nichts liefert PVGIS als Fallback
+3. Prüft optional, ob bereits eine PV-Anlage im Marktstammdatenregister eingetragen ist
+4. Erstellt einen Punkt-Layer in QGIS mit Farbverlauf (rot = wenig, grün = viel Potenzial)
+5. Exportiert die Ergebnisse als Excel-Datei und optional als GeoPackage
+
+Die Analyse läuft im Hintergrund – QGIS bleibt während der ganzen Zeit bedienbar.
 
 ---
 
 ## Voraussetzungen
 
-| Anforderung | Version |
-|---|---|
-| QGIS | ≥ 3.16 |
-| Python | ≥ 3.9 (wird mit QGIS mitgeliefert) |
+- QGIS 3.16 oder neuer
+- Python 3.9+ (kommt mit QGIS)
 
-### Python-Pakete (einmalig in QGIS-Python installieren)
-
-**QGIS → Erweiterungen → Python-Konsole** öffnen und ausführen:
+Je nach Modus brauchst du noch ein paar Python-Pakete. Am einfachsten über die
+QGIS Python-Konsole installieren:
 
 ```python
 import pip
 
-# Minimum (Excel-Export + Konfiguration):
+# Immer nötig (Excel-Export):
 pip.main(['install', 'pandas', 'openpyxl', 'pydantic-settings'])
 
 # Nur für PostGIS-Modus:
 pip.main(['install', 'psycopg2-binary'])
 
-# Optional – YOLO-Panel-Erkennung:
+# Optional – YOLO-Panel-Erkennung auf Satellitenbildern:
 pip.main(['install', 'leafmap', 'ultralytics'])
 ```
 
-> OSM/Overpass-Modus benötigt keine zusätzlichen Pakete – nur Python-Stdlib.
+Der OSM/Overpass-Modus braucht nichts Zusätzliches, das läuft mit der Python-Standardbibliothek.
 
 ---
 
 ## Installation
 
-### Aus dem ZIP (empfohlen)
+Es gibt noch keinen offiziellen Release-ZIP. Du hast zwei Optionen:
 
-Noch kein offizieller Release vorhanden. ZIP selbst bauen:
-
-```bash
-git clone https://github.com/LuGIS92/solar-sites-qgis.git
-cd solar-sites-qgis
-bash scripts/build_zip.sh
-# → dist/solar_sites_pv_analysis_v2.0.0.zip
-```
-
-Dann in QGIS: **Erweiterungen → Erweiterungen verwalten → Aus ZIP installieren**.
-
-### Entwickler-Installation (Symlink)
+### Als Entwickler (empfohlen fürs Ausprobieren)
 
 ```bash
 git clone https://github.com/LuGIS92/solar-sites-qgis.git
 cd solar-sites-qgis
 
+# Symlink setzen – einmalig, bleibt dauerhaft erhalten:
 # macOS:
 ln -sfn "$(pwd)/qgis_solar_plugin" \
   ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/qgis_solar_plugin
@@ -89,201 +76,144 @@ ln -sfn "$(pwd)/qgis_solar_plugin" \
   ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/qgis_solar_plugin
 ```
 
-Den Symlink **nur einmal** setzen – er bleibt dauerhaft erhalten.  
-Änderungen im Repository sind sofort aktiv; nur Plugin Reloader (F5) drücken.
+Nach Code-Änderungen reicht der [Plugin Reloader](https://plugins.qgis.org/plugins/plugin_reloader/)
+in QGIS – kein Neustart nötig. Ausnahme: Änderungen in `solar_sites/` brauchen einen
+QGIS-Neustart wegen des Python-Modul-Caches.
+
+### Als ZIP
+
+```bash
+bash scripts/build_zip.sh
+# → dist/solar_sites_pv_analysis_v2.0.0.zip
+```
+
+Dann in QGIS: **Erweiterungen → Erweiterungen verwalten → Aus ZIP installieren**.
 
 ---
 
-## Schnellstart (mit Beispieldaten)
+## Schnellstart
 
-Im Ordner `data/sample.gpkg` liegen 20 synthetische Gebäude im Kölner Raum.
+Für einen ersten Test liegt in `data/sample.gpkg` ein kleines GeoPackage mit
+20 synthetischen Gebäuden im Kölner Raum.
 
-1. QGIS öffnen, Hintergrundkarte laden (z.B. OpenStreetMap via QuickMapServices).
-2. Solar Sites Panel öffnen (Toolbar oder **Erweiterungen → Solar Sites**).
-3. **Seite 1 – Datenquelle:** *GeoPackage* wählen, `data/sample.gpkg`, Layer `buildings`.
-4. **Seite 2 – Spalten:** *Spalten laden* klicken, dann *Weiter* (automatische Erkennung).
-5. **Seite 3 – Suchgebiet:** *Aktuelle Kartenansicht übernehmen* oder `Köln` eingeben.
-6. **Seite 4 – Filter:** Standardwerte lassen, **Analyse starten** klicken.
-7. Ein neuer Punkt-Layer *Solar XXXX* erscheint – farbcodiert nach Jahresertrag (grün = hohes Potenzial).
+1. QGIS öffnen, irgendeine Hintergrundkarte laden
+2. Solar Sites Panel öffnen (Toolbar oder **Erweiterungen → Solar Sites**)
+3. **Seite 1:** GeoPackage wählen → `data/sample.gpkg`, Layer `buildings`
+4. **Seite 2:** „Spalten laden" klicken, dann Weiter (funktioniert automatisch)
+5. **Seite 3:** „Aktuelle Kartenansicht übernehmen" oder eine Stadt eingeben
+6. **Seite 4:** Standardwerte lassen → **Analyse starten**
+
+Ein paar Sekunden später erscheint ein Punkt-Layer auf der Karte.
 
 ### Ohne eigene Gebäudedaten – OSM-Modus
 
-1. **Seite 1 – Datenquelle:** *OpenStreetMap (Overpass)* wählen.
-2. Seite 2 (Spalten) wird automatisch übersprungen.
-3. **Seite 3 – Suchgebiet:** Stadt eingeben oder Kartenausschnitt übernehmen.
-4. **Seite 4 – Filter:** Gebäude-Limit setzen (Empfehlung: 100–200 für erste Tests).
-5. Analyse starten – Gebäude werden live aus OpenStreetMap geladen.
+Wenn du keine PostGIS-Datenbank oder kein eigenes GeoPackage hast, nimm einfach
+OpenStreetMap als Datenquelle. Auf **Seite 1** „OpenStreetMap (Overpass)" wählen –
+die Spalten-Seite wird übersprungen, der Rest bleibt gleich.
 
-> **Hinweis OSM-Modus:** Für große Gebiete (> 5 km²) kann die Overpass-Abfrage mehrere
-> Minuten dauern. Gebäudetyp-Filter nutzt OSM-Tags (`house`, `industrial`, …) statt ALKIS-Codes.
+Für größere Städte empfiehlt sich ein Gebäude-Limit von 100–200 beim ersten Test,
+sonst kann die Overpass-Abfrage ein paar Minuten dauern.
 
 ---
 
 ## Datenquellen
 
-### Option A – PostGIS (ALKIS)
+### PostGIS / ALKIS
 
-Erfordert eine PostgreSQL/PostGIS-Datenbank mit ALKIS-Gebäudedaten.
+Standard für Deutschland, wenn eine aufbereitete Datenbank vorhanden ist. Das Plugin
+erwartet eine PostgreSQL-Verbindung, die bereits in QGIS eingerichtet ist.
 
-| Einstellung | Standard | Beschreibung |
-|---|---|---|
-| Verbindung | — | In QGIS gespeicherte PostgreSQL-Verbindung |
-| Gebäude-Tabelle | `deutschland.gebaeude_deutschland_tbl` | ALKIS-Polygon-Tabelle (SRID 3035) |
-| MaStR-Tabelle | `deutschland.mastr_solar` | Punkt-Tabelle mit PV-Registrierungen (optional) |
+Standardmäßige Tabellennamen: `deutschland.gebaeude_deutschland_tbl` für Gebäude,
+`deutschland.mastr_solar` für MaStR-Daten. Beides konfigurierbar, abweichende
+Spaltennamen lassen sich auf Seite 2 mappen.
 
-**Erwartete Spalten (ALKIS-Standard):**
+### GeoPackage
 
-| Spalte | Typ | Hinweis |
-|---|---|---|
-| `gml_id` | TEXT | Eindeutige Gebäude-ID |
-| `geom` | GEOMETRY(Polygon, 3035) | Grundriss |
-| `area` | DOUBLE PRECISION | Dachfläche m² (oder via ST_Area berechnet) |
-| `gebaeudefunktion` | TEXT | ALKIS-Gebäudefunktionscode |
-| `roof_type` | TEXT | Dachform (optional) |
+Funktioniert mit jeder Polygon-Datei. Das Plugin versucht gängige Spaltennamen
+automatisch zu erkennen. MaStR-Daten können als zweite GeoPackage-Datei dazugeladen
+werden – am einfachsten erstellt via [open-mastr](https://open-mastr.readthedocs.io/en/latest/advanced/).
 
-Abweichende Spaltennamen können auf Wizard-Seite 2 zugeordnet werden.
+### OpenStreetMap (Overpass-API)
 
-### Option B – GeoPackage
-
-Jede Polygon-Layer-Datei funktioniert. Das Plugin erkennt gängige Spaltennamen
-automatisch und fällt graceful zurück wenn Felder fehlen.
-
-**MaStR als GeoPackage** – am einfachsten via [open-mastr](https://open-mastr.readthedocs.io/en/latest/advanced/):
-
-```bash
-pip install open-mastr
-python -c "
-from open_mastr import Mastr
-db = Mastr()
-db.download(date='today')
-db.to_csv()
-# Solar-CSV in QGIS importieren → Als GeoPackage speichern
-"
-```
-
-### Option C – OpenStreetMap (Overpass-API)
-
-Keine lokalen Daten nötig. Gebäude werden live aus OSM geladen.
-
-- Weltweit einsetzbar
-- Keine zusätzliche Installation
-- Standard-Overpass-Endpunkt: `https://overpass-api.de/api/interpreter`
-- Alternative Instanzen können in der UI konfiguriert werden
-- Gebäudetyp-Filter nutzt OSM-Tags: `house`, `apartments`, `industrial`, `warehouse`, …
+Kein lokaler Datensatz nötig, funktioniert weltweit. Der Gebäudetyp-Filter
+arbeitet mit OSM-Tags (`house`, `industrial`, `warehouse`, …) statt ALKIS-Codes.
+Standard-Endpunkt ist `overpass-api.de`, lässt sich in der UI auf eine eigene
+Instanz umstellen.
 
 ---
 
-## Ausgabe-Felder
+## Was rauskommt
 
-| Feld | Einheit | Quelle |
-|---|---|---|
-| `annual_energy_kwh` | kWh/Jahr | DLR oder PVGIS |
-| `installable_kwp` | kWp | DLR-Modulfläche oder Schätzung |
-| `usable_area_sqm` | m² | DLR oder Schätzung |
-| `pvgis_irradiation` | kWh/kWp/Jahr | PVGIS-API |
-| `dlr_annual_kwh` | kWh/Jahr | DLR-Gebäudeatlas (Rohwert) |
-| `data_source` | `dlr` / `pvgis` | Verwendete Quelle |
-| `mastr_registered` | 0 / 1 | Im MaStR gefunden |
-| `mastr_capacity_kw` | kW | Registrierte Gesamtleistung in der Nähe |
-| `panels_detected` | 0 / 1 | YOLO-Erkennungsergebnis |
-| `building_type` | Text | ALKIS-Code oder OSM-Tag |
-| `building_source` | Text | `alkis`, `osm`, … |
-| `area_sqm` | m² | Grundfläche |
+Der Ergebnis-Layer enthält pro Gebäude:
+
+| Feld | Bedeutung |
+|---|---|
+| `annual_energy_kwh` | Geschätzter Jahresertrag in kWh |
+| `installable_kwp` | Installierbare Leistung in kWp |
+| `usable_area_sqm` | Nutzbare Dachfläche in m² |
+| `pvgis_irradiation` | Globalstrahlung laut PVGIS (kWh/kWp/Jahr) |
+| `dlr_annual_kwh` | Rohwert aus dem DLR-Atlas (falls verfügbar) |
+| `data_source` | `dlr` oder `pvgis` – welche Quelle genutzt wurde |
+| `mastr_registered` | 1 wenn im MaStR gefunden, sonst 0 |
+| `mastr_capacity_kw` | Registrierte Leistung in der Nähe (kW) |
+| `panels_detected` | 1 wenn YOLO Panels erkannt hat |
+| `building_type` | ALKIS-Code oder OSM-Tag |
+| `area_sqm` | Grundfläche des Gebäudes |
+
+Dazu gibt es einen Excel-Export mit denselben Feldern plus Adressdaten (falls Nominatim-Geocoding aktiviert).
 
 ---
 
 ## Gebäudetyp-Filter
 
-| Eingabe | Wirkung |
-|---|---|
-| *(leer)* | Alle Gebäude |
-| Voreinstellung *Wohngebäude* | ALKIS `31001_1xxx` / OSM: `house`, `apartments`, … |
-| Voreinstellung *Gewerbe/Industrie* | ALKIS `31001_2xxx`/`31001_3xxx` / OSM: `industrial`, `warehouse`, … |
-| `31001_2620` | Genau ein ALKIS-Typ (z.B. Lagerhalle) |
-| `industrial` | Freitext – enthält diesen String (Groß-/Kleinschreibung egal) |
+Der Filter auf Seite 4 macht je nach Datenquelle etwas Unterschiedliches:
+
+- **Leer:** alle Gebäude
+- **Wohngebäude:** ALKIS `31001_1xxx` bzw. OSM `house`, `apartments`, `detached`, …
+- **Gewerbe/Industrie:** ALKIS `31001_2/3xxx` bzw. OSM `industrial`, `warehouse`, `commercial`, …
+- **Eigener Filter:** Freitext, funktioniert mit beiden Quellen (Groß-/Kleinschreibung egal)
 
 ---
 
-## Konfiguration (`.env`)
+## Konfiguration
 
-`.env.example` nach `.env` kopieren und anpassen.  
-Das Plugin funktioniert auch ohne `.env`-Datei mit sinnvollen Standardwerten.
+Das Plugin läuft auch ohne `.env`-Datei mit sinnvollen Standardwerten. Wer etwas
+anpassen will: `.env.example` nach `.env` kopieren und bearbeiten.
+
+Die wichtigsten Stellschrauben:
 
 ```ini
-# DLR-Gebäudeatlas (öffentlicher Dienst, kein API-Key)
-DLR_ZOOM=19                  # Tile-Zoom (17–19 empfohlen)
-
-# PVGIS (EU JRC, kein Key)
-PVGIS_SYSTEM_LOSS=14.0       # Systemverluste in %
-
-# Solarmodul-Parameter
-PANEL_EFFICIENCY=0.20        # Modulwirkungsgrad (20 %)
-PANEL_POWER_PER_SQM=0.175    # kWp pro m²
-ROOF_COVERAGE_FLAT=0.65      # Nutzbare Fläche Flachdach
-ROOF_COVERAGE_PITCHED=0.55   # Nutzbare Fläche Schrägdach
+DLR_ZOOM=19              # Tile-Zoom für den DLR-Atlas (17–19, höher bringt nichts)
+PVGIS_SYSTEM_LOSS=14.0   # Systemverluste in %
+PANEL_POWER_PER_SQM=0.175  # kWp pro m² Modulfläche
+ROOF_COVERAGE_FLAT=0.65    # Anteil nutzbarer Fläche bei Flachdächern
+ROOF_COVERAGE_PITCHED=0.55 # Anteil nutzbarer Fläche bei Schrägdächern
 ```
 
 ---
 
-## Repository-Struktur
+## Bekannte Einschränkungen
 
-```
-solar-sites-qgis/
-├── qgis_solar_plugin/       ← QGIS-Plugin (UI-Schicht)
-│   ├── solar_dock.py        ← 5-seitiger Wizard (QStackedWidget)
-│   ├── worker.py            ← Hintergrund-Analyse-Thread
-│   ├── data_sources.py      ← PostGIS + GeoPackage + Overpass
-│   ├── layer_builder.py     ← Ergebnisse → QGIS-Vektorlayer
-│   └── qgis_db_utils.py     ← QGIS-Auth-Manager-Integration
-├── solar_sites/             ← Reine Python-Analysebibliothek (kein QGIS)
-│   ├── solar/               ← estimator, DLR, PVGIS, YOLO-Erkennung
-│   ├── buildings/           ← Gebäude-Finder, Overpass-Client
-│   ├── geocoding/           ← Nominatim-Reverse-Geocoding
-│   └── export/              ← Excel-Export
-├── tests/                   ← pytest-Tests (kein QGIS/DB erforderlich)
-├── data/
-│   └── sample.gpkg          ← 20 Beispielgebäude (Kölner Raum, WGS84)
-└── scripts/
-    ├── build_zip.sh         ← Installierbares Plugin-ZIP bauen
-    └── create_sample_gpkg.py← sample.gpkg erzeugen (einmalig)
-```
+- Der DLR-Atlas deckt nur Deutschland ab. Außerhalb springt das Plugin automatisch auf PVGIS um.
+- Der OSM-Modus hat keine MaStR-Anbindung.
+- `pydantic-settings` und `psycopg2` sind in QGIS-Python nicht vorinstalliert und müssen einmalig nachinstalliert werden.
+- YOLO-Panel-Erkennung ist experimentell und braucht `leafmap` + `ultralytics` in QGIS-Python.
 
 ---
 
 ## Entwicklung
 
-### Tests ausführen
-
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -v
+pytest tests/          # Tests laufen ohne QGIS und ohne DB
+ruff check .           # Linter
 ```
 
-Tests in `tests/` benötigen kein QGIS und keine Datenbankverbindung.  
-QGIS-abhängiger Code wird manuell im Plugin getestet.
-
-### Linter
-
-```bash
-ruff check .        # Fehler prüfen
-ruff check --fix .  # Auto-Fix
-```
-
-### Release erstellen
-
-```bash
-# version= in metadata.txt hochsetzen, dann:
-git tag v2.0.1
-git push origin v2.0.1
-# → GitHub Actions baut ZIP und erstellt GitHub Release automatisch
-```
+Für einen neuen Release: `version=` in `metadata.txt` hochsetzen, dann Tag pushen –
+GitHub Actions baut den ZIP und veröffentlicht automatisch einen Release.
 
 ---
 
 ## Lizenz
 
-[GNU General Public License v3.0](LICENSE)
-
-Dieses Plugin ist freie Software: du kannst es unter den Bedingungen der
-GNU General Public License, Version 3 oder höher, weitergeben und/oder
-modifizieren.
+[GPL v3](LICENSE) – freie Software, Weitergabe und Modifikation erwünscht.

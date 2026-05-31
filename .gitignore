@@ -5,6 +5,15 @@
 # Plugin build output
 /dist/
 
+# Claude Code internal files
+.claude/
+
+# ML model weights – nicht committen (zu groß / proprietär)
+*.pt
+*.pth
+*.onnx
+*.weights
+
 # Development log files
 log*.txt
 workflow_*.txt

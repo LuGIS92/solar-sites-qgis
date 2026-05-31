@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import traceback
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from qgis.PyQt.QtCore import QThread, pyqtSignal
 
 
 class AnalysisWorker(QThread):

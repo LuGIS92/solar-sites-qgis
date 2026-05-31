@@ -44,7 +44,7 @@ jobs:
           EOF
 
       - name: GitHub Release erstellen
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: "Solar Sites PV Plugin ${{ steps.version.outputs.VERSION }}"
           body_path: release_notes.md
